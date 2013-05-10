@@ -4,14 +4,14 @@ layout: nil
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
  
- <title>Roger Chapman</title>
- <link href="http://rogchap.com/atom.xml" rel="self"/>
- <link href="http://rogchap.com/"/>
+ <title>Johannes 'heipei' Gilger</title>
+ <link href="http://heipei.github.io/atom.xml" rel="self"/>
+ <link href="http://heipei.github.io/"/>
  <updated>{{ site.time | date_to_xmlschema }}</updated>
- <id>http://rogchap.com/</id>
+ <id>http://heipei.github.io/</id>
  <author>
-   <name>Roger Chapman</name>
-   <email>rogchap@gmail.com</email>
+   <name>Johannes Gilger</name>
+   <email>heipei@hackvalue.de</email>
  </author>
 
  {% for post in site.posts %}
