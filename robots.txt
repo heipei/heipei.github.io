@@ -1,0 +1,3 @@
+Sitemap: http://heipei.github.io/sitemap.xml
+User-agent: *
+Allow: /

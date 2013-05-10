@@ -1,0 +1,3 @@
+url: http://heipei.github.io
+permalink: pretty
+exclude: ['Rakefile.rb', 'CNAME', 'README.markdown']
