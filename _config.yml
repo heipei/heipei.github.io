@@ -1,3 +1,4 @@
 url: http://heipei.github.io
 permalink: pretty
+pygments: true
 exclude: ['Rakefile.rb', 'CNAME', 'README.markdown']

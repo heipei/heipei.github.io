@@ -1,3 +1,5 @@
+@import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono|Sanchez:400italic,400);
+
 /*****************************************************************************/
 /*
 /* Common
@@ -15,14 +17,8 @@ html, body {
 
 body {
 	background-color: white;
-	font: 13.34px helvetica, arial, clean, sans-serif;
-	*font-size: small;
-	text-align: center;
-}
-
-h1, h2, h3, h4, h5, h6 {
-	font-size: 100%;
-	margin-top: 1em;
+  font-family: "Helvetica Neue Light","Helvetica Neue",Helvetica,Arial,sans-serif;
+  color: #333;
 }
 
 h1 {
@@ -34,17 +30,26 @@ p {
 	margin: 1em 0;
 }
 
-a {
-	color: #00a;
+a, a:visited {
+	color: rgb(99, 157, 182);
+  text-decoration: none;
+  -webkit-transition:color 0.3s ease-in;  
+  -moz-transition:color 0.3s ease-in;  
+  -o-transition:color 0.3s ease-in;  
+  transition:color 0.3s ease-in;  
 }
 
-a:hover {
-	color: black;
+a:hover, a:visited:hover {
+	color: #111111;
+  text-decoration: underline;
+
 }
 
+/*
 a:visited {
-	color: #a0a;
+	color: rgb(149, 161, 168);
 }
+*/
 
 table {
 	font-size: inherit;
@@ -66,22 +71,41 @@ blockquote {
 	text-align: justify;
 	width: 700px;
 	margin: 3em auto 2em auto;
-	line-height: 1.5em;
+	line-height: 1.3em;
 }
 
 h1, h2, h3, h4, h5, h6, .comments {
 	text-align: left;
 }
 
+h1, h2, h3, h4, h5, h6 {
+	font-size: 120%;
+  font-weight: 400;
+	margin-top: 1em;
+  color: rgb(171, 48, 39);
+  font-family: 'Sanchez', sans-serif;
+}
+
+h1 {
+  font-size: 130%;
+}
+
+div#post h1:first-child {
+  font-size: 150%;
+}
+
 .title {
 	color: #369;
-	font-weight: bold;
 	margin-bottom: 2em;
 }
 
 .site .title a {
-	color: #369;
+	color: rgb(14, 24, 33);
 	text-decoration: none;
+  font-family: 'Sanchez', sans-serif;
+  display: block;
+  font-size: 120%;
+  margin-bottom: -5px;
 }
 
 .site .title a:hover {
@@ -108,6 +132,7 @@ h1, h2, h3, h4, h5, h6, .comments {
 .site .footer .contact a,
 .site .footer .rss a {
 	color: #8085C1;
+	color: rgb(99, 157, 182);
 }
 
 .site .footer .rss {
@@ -125,6 +150,7 @@ h1, h2, h3, h4, h5, h6, .comments {
 ul.posts {
 	list-style-type: none;
 	margin-bottom: 2em;
+  margin-left: 0px;
 }
 
 ul.posts li {
@@ -170,14 +196,18 @@ ul.posts a {
 }
 
 #post code {
-	border: 1px solid #ddd;
-	background-color: #eef;
 	font-size: 85%;
-	padding: 0 .2em;
+  padding: 0px;
+  line-height: 1em;
+  text-align: left;
 }
 
-#post pre code {
-	border: none;
+#post pre {
+	border: 1px solid #ddd;
+}
+
+pre, code {
+  font-family: 'Ubuntu Mono', monospace;
 }
 
   /* terminal */
@@ -199,3 +229,39 @@ ul.posts a {
 #related h2 {
 	margin-bottom: 1em;
 }
+
+small {
+  margin-top: 0px;
+  margin-bottom: 5px;
+  font-style: italic;
+  color: #444444;
+}
+
+
+div.block1, div.block2, div.block3 {
+  width: 20px;
+  height: 5px;
+  display: inline-block;
+}
+
+div.block1 {
+	background-color: rgb(14, 24, 33);
+}
+
+div.block2 {
+  background-color: rgb(171, 48, 39);
+}
+
+div.block3 {
+	background-color: rgb(99, 157, 182);
+}
+
+ul {
+  list-style-type: square;
+  margin-left: 20px;
+}
+
+div.home a {
+  color: rgb(14, 24, 33);
+}
+
