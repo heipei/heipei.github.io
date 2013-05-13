@@ -138,7 +138,7 @@ Using hpfeeds with dionaea <a name="dionaea">&nbsp;</a>
 ==========================
 
 One of the sensors that supports hpfeeds is dionaea - the most modern low-interaction server honeypot. This software is
-also the source for most events currently showing up on the honeymap (link). Sadly the hpfeeds module is not in the
+also the source for most events currently showing up on the [HoneyMap](http://map.honeynet.org). Sadly the hpfeeds module is not part of the
 official git repository, so we need to make a small change to its setup steps.
 
 To setup dionaea you need to follow the official setup instructions

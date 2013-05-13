@@ -18,7 +18,9 @@ html, body {
 body {
 	background-color: white;
   font-family: "Helvetica Neue Light","Helvetica Neue",Helvetica,Arial,sans-serif;
+  font-stretch: condensed;
   color: #333;
+  font-size: 14px;
 }
 
 h1 {
