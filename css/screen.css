@@ -1,4 +1,4 @@
-@import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono|Sanchez:400italic,400);
+@import url(http://fonts.googleapis.com/css?family=Open+Sans|Sanchez:400italic,400);
 
 /*****************************************************************************/
 /*
@@ -17,10 +17,9 @@ html, body {
 
 body {
 	background-color: white;
-  font-family: "Helvetica Neue Light","Helvetica Neue",Helvetica,Arial,sans-serif;
-  font-stretch: condensed;
-  color: #333;
-  font-size: 14px;
+  font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+  color: #444;
+  font-size: 16px;
 }
 
 h1 {
@@ -69,8 +68,7 @@ blockquote {
 /*****************************************************************************/
 
 .site {
-	font-size: 110%;
-	text-align: justify;
+	font-size: 100%;
 	width: 700px;
 	margin: 3em auto 2em auto;
 	line-height: 1.3em;
