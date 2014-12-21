@@ -7,32 +7,32 @@
 /*****************************************************************************/
 
 * {
-	margin: 0;
-	padding: 0;
+    margin: 0;
+    padding: 0;
 }
 
 html, body {
-	height: 100%;
+    height: 100%;
 }
 
 body {
-	background-color: white;
+    background-color: white;
   font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
   color: #444;
   font-size: 16px;
 }
 
 h1 {
-	font-size: 110%;
-	margin-bottom: 1em;
+    font-size: 110%;
+    margin-bottom: 1em;
 }
 
 p {
-	margin: 1em 0;
+    margin: 1em 0;
 }
 
 a, a:visited {
-	color: rgb(99, 157, 182);
+    color: rgb(99, 157, 182);
   text-decoration: none;
   -webkit-transition:color 0.3s ease-in;  
   -moz-transition:color 0.3s ease-in;  
@@ -41,24 +41,24 @@ a, a:visited {
 }
 
 a:hover, a:visited:hover {
-	color: #111111;
+  color: #222222;
   text-decoration: underline;
 
 }
 
 /*
 a:visited {
-	color: rgb(149, 161, 168);
+    color: rgb(149, 161, 168);
 }
 */
 
 table {
-	font-size: inherit;
-	font: 100%;
+    font-size: inherit;
+    font: 100%;
 }
 
 blockquote {
-	margin-left:1em;
+    margin-left:1em;
 }
 
 /*****************************************************************************/
@@ -68,22 +68,33 @@ blockquote {
 /*****************************************************************************/
 
 .site {
-	font-size: 100%;
-	width: 700px;
-	margin: 3em auto 2em auto;
-	line-height: 1.3em;
+    font-size: 100%;
+    width: 700px;
+    margin: 0em auto 2em auto;
+    line-height: 1.3em;
+}
+
+.header {
+    background-color: #1f1f1f;
+    height: 50px;
+    padding-top: 30px;
+    color: #000000;
+}
+
+.header .site .title a {
+    color: #ffffff;
 }
 
 h1, h2, h3, h4, h5, h6, .comments {
-	text-align: left;
+    text-align: left;
 }
 
 h1, h2, h3, h4, h5, h6 {
-	font-size: 120%;
-  font-weight: 400;
-	margin-top: 1em;
-  color: rgb(171, 48, 39);
-  font-family: 'Sanchez', sans-serif;
+    font-size: 120%;
+    font-weight: 400;
+    margin-top: 1em;
+    color: rgb(171, 48, 39);
+    font-family: 'Sanchez', sans-serif;
 }
 
 h1 {
@@ -95,50 +106,50 @@ div#post h1:first-child {
 }
 
 .title {
-	color: #369;
-	margin-bottom: 2em;
+    color: #369;
+    margin-bottom: 2em;
 }
 
 .site .title a {
-	color: rgb(14, 24, 33);
-	text-decoration: none;
-  font-family: 'Sanchez', sans-serif;
-  display: block;
-  font-size: 120%;
-  margin-bottom: -5px;
+    color: rgb(14, 24, 33);
+    text-decoration: none;
+    font-family: 'Sanchez', sans-serif;
+    display: block;
+    font-size: 120%;
+    margin-bottom: -5px;
 }
 
 .site .title a:hover {
-	color: black;
+    color: black;
 }
 
 .site .meta {
-	color: #aaa;
+    color: #aaa;
 }
 
 .site .footer {
-	font-size: 80%;
-	color: #666;
-	border-top: 4px solid #eee;
-	margin-top: 2em;
-	overflow: hidden;
+    font-size: 80%;
+    color: #666;
+    border-top: 4px solid #eee;
+    margin-top: 2em;
+    overflow: hidden;
 }
 
 .site .footer .contact {
-	float: left;
-	margin-right: 3em;
+    float: left;
+    margin-right: 3em;
 }
 
 .site .footer .contact a,
 .site .footer .rss a {
-	color: #8085C1;
-	color: rgb(99, 157, 182);
+    color: #8085C1;
+    color: rgb(99, 157, 182);
 }
 
 .site .footer .rss {
-	margin-top: 1.1em;
-	margin-right: 0em;
-	float: right;
+    margin-top: 1.1em;
+    margin-right: 0em;
+    float: right;
 }
 
 /*****************************************************************************/
@@ -148,22 +159,28 @@ div#post h1:first-child {
 /*****************************************************************************/
 
 ul.posts {
-	list-style-type: none;
-	margin-bottom: 2em;
-  margin-left: 0px;
+    list-style-type: none;
+    margin-bottom: 2em;
+    margin-left: 10px;
+    padding-left: 10px;
 }
 
 ul.posts li {
-	line-height: 1.75em;
+    line-height: 1.75em;
+    border-bottom: 1px solid #eee;
 }
 
 ul.posts span {
-	color: #aaa;
-	font-size: 80%;
+    color: #aaa;
+    font-size: 80%;
 }
 
 ul.posts a {
-	text-align: left;
+    text-align: left;
+}
+
+ul.posts li span.date {
+    float: right;
 }
 
 /*****************************************************************************/
@@ -179,31 +196,31 @@ ul.posts a {
   /* standard */
 
 #post pre {
-	border: 1px solid #ddd;
-	background-color: #eef;
-	padding: 0 .4em;
-	overflow-x: auto;
-	white-space: pre-wrap;
-	white-space: -moz-pre-wrap !important;
-	white-space: -pre-wrap;
-	white-space: -o-pre-wrap;
-	word-wrap: break-word;
+    border: 1px solid #ddd;
+    background-color: #eef;
+    padding: 0 .4em;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap !important;
+    white-space: -pre-wrap;
+    white-space: -o-pre-wrap;
+    word-wrap: break-word;
 }
 
 #post ul,
 #post ol {
-	margin-left: 1.35em;
+    margin-left: 1.35em;
 }
 
 #post code {
-	font-size: 85%;
+    font-size: 85%;
   padding: 0px;
   line-height: 1em;
   text-align: left;
 }
 
 #post pre {
-	border: 1px solid #ddd;
+    border: 1px solid #ddd;
 }
 
 pre, code {
@@ -213,21 +230,21 @@ pre, code {
   /* terminal */
 
 #post pre.terminal {
-	border: 1px solid black;
-	background-color: #333;
-	color: white;
+    border: 1px solid black;
+    background-color: #333;
+    color: white;
 }
 
 #post pre.terminal code {
-	background-color: #333;
+    background-color: #333;
 }
 
 #related {
-	margin-top: 2em;
+    margin-top: 2em;
 }
 
 #related h2 {
-	margin-bottom: 1em;
+    margin-bottom: 1em;
 }
 
 small {
@@ -245,7 +262,7 @@ div.block1, div.block2, div.block3 {
 }
 
 div.block1 {
-	background-color: rgb(14, 24, 33);
+    background-color: rgb(14, 24, 33);
 }
 
 div.block2 {
@@ -253,7 +270,7 @@ div.block2 {
 }
 
 div.block3 {
-	background-color: rgb(99, 157, 182);
+    background-color: rgb(99, 157, 182);
 }
 
 ul {
