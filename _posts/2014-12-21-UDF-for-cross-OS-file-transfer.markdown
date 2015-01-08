@@ -74,10 +74,18 @@ First of all, I haven't actually tested whether the UDF drive I created also wor
 pervasion of the UDF standard, I'd be inclined to chalk it up to Windows if it didn't work.
 
 My biggest concern with this setup is that there currently is no Open Source platform-interoperable way to do full-disk
-encryption (FTE). Ever since Truecrypt shut down, there isn't even a way to do it between Mac OS and Linux, though both
-have very mature FTE solutions builtin. You could use [encfs](https://github.com/vgough/encfs) which is a FUSE-based filesystem
+encryption (FDE). Ever since Truecrypt shut down, there isn't even a way to do it between Mac OS and Linux, though both
+have very mature FDE solutions builtin. You could use [encfs](https://github.com/vgough/encfs) which is a FUSE-based filesystem
 which encrypts both the content and the filenames (but leaves the directory structure visible). encfs is availabe in
 most Linux distributions and in homebrew.
+
+Update - January 2014
+=====================
+
+I've since experienced a scenario where a UDF-drive on my Linux machine
+exhibited some really strange behaviour during writes (via rsync for example),
+resulting in a 100% CPU load of the process doing the writing. Since I did not
+have the time to investigate I simply switched that disk back to ext4 for now.
 
 References
 ==========
