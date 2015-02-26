@@ -52,7 +52,7 @@ ssh-agent is a tedious task. SSH is very promiscuous when it comes to using SSH
 keys, and once you make use of another key it will happily add that to your
 current agent session.
 
-Lastly, SSH agent forwarding only works for interactive sessions which gives it
+Lastly, SSH Agent Forwarding only works for interactive sessions which gives it
 that very ghetto feeling of missing out on basically all the great features SSH
 has to offer. Ever copied a file to host A and then to host B? You're doing it
 wrong!
@@ -111,13 +111,13 @@ spawn a separate ssh-agent there and then add all your keys to that, typing
 each passphrase again. Or you could create a `ProxyCommand` to use your
 namespace as an intermediate host, either globally or per-host. But then you'd
 have to toggle that on and off if you ever want to connect to the host directly
-as opposed to through the namespace. Here, a simply `ssh -A` clearly wins in
+as opposed to through the namespace. Here, a simple `ssh -A` clearly wins in
 terms of convenience.
 
 Conclusion
 ==========
 
-By now you should have some idea about why not to use SSH agent forwarding. If
+By now you should have some idea about why not to use SSH Agent Forwarding. If
 you do have a legitimate use-case which I haven't covered here, feel free to
 leave it in the comments. I'll follow up this post with a general breakdown of
 some of the awesome features that SSH has to offer. The `ProxyCommand` will
@@ -129,4 +129,5 @@ References
 * [The perils of using an ssh-agent](https://www.reddit.com/r/netsec/comments/2m2zpb/the_perils_of_using_an_sshagent/) - Post which fails to mention ProxyCommand
 * [Good post on ssh-agent and ProxyCommand](http://sshmenu.sourceforge.net/articles/transparent-mulithop.html)
 * [Putting vpnc into a Linux network namespace](https://github.com/alonbl/vpnc-scripts/blob/master/vpnc-script-sshd)
+* [Linux network namespaces in operation](http://lwn.net/Articles/580893/)
 
