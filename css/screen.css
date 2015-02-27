@@ -16,7 +16,7 @@ html, body {
 }
 
 body {
-    background-color: white;
+  background-color: white;
   font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
   color: #444;
   font-size: 16px;
@@ -68,16 +68,15 @@ blockquote {
 /*****************************************************************************/
 
 .site {
-    font-size: 100%;
     max-width: 700px;
-    margin: 0em auto 2em auto;
+    margin: 0em auto 0em auto;
     line-height: 1.3em;
+    padding: 0em 0.5em 0 0.5em;
 }
 
 .header {
     background-color: #1f1f1f;
-    height: 50px;
-    padding-top: 30px;
+    padding: 1em 0em 0.5em 0em;
     color: #000000;
 }
 
@@ -102,12 +101,11 @@ h1 {
 }
 
 div#post h1:first-child {
-  font-size: 150%;
+  font-size: 1.8em;
 }
 
 .title {
     color: #369;
-    margin-bottom: 2em;
 }
 
 .site .title a {
@@ -115,12 +113,12 @@ div#post h1:first-child {
     text-decoration: none;
     font-family: 'Sanchez', sans-serif;
     display: block;
-    font-size: 120%;
-    margin-bottom: -5px;
+    font-size: 2em;
+    margin-bottom: 0.1em;
 }
 
 .site .title a:hover {
-    color: black;
+    color: #222222;
 }
 
 .site .meta {
@@ -128,7 +126,7 @@ div#post h1:first-child {
 }
 
 .site .footer {
-    font-size: 80%;
+    font-size: 0.8em;
     color: #666;
     border-top: 4px solid #eee;
     margin-top: 2em;
@@ -256,8 +254,8 @@ small {
 
 
 div.block1, div.block2, div.block3 {
-  width: 20px;
-  height: 5px;
+  width: 1em;
+  height: 0.5em;
   display: inline-block;
 }
 
@@ -271,10 +269,6 @@ div.block2 {
 
 div.block3 {
     background-color: rgb(99, 157, 182);
-}
-
-ul {
-  list-style-type: square;
   margin-left: 20px;
 }
 
@@ -283,8 +277,14 @@ div.home a {
 }
 
 
-@media screen and (max-width: 680px) {
+@media screen and (max-device-width: 700px) {
     .site {
-        padding: 0.5em;
+        width: auto;
+        max-width: 100%;
+        padding: 1em;
+    }
+
+    * {
+        font-size: 20px;
     }
 }
