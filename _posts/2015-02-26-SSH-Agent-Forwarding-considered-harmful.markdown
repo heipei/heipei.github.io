@@ -24,8 +24,8 @@ host A with your SSH key and from there connect to another host B with that
 same key. This obviously is only needed if you cannot connect to host B
 directly from your workstation.
 
-The problem is that while you're connected to host A, a port-forwarding will be
-set up so that the SSH client on host A can connect to the ssh-agent on your
+The problem is that while you're connected to host A, a forwarding socket will
+be set up so that the SSH client on host A can connect to the ssh-agent on your
 workstation to perform authentication on its behalf. This means that anyone
 with sufficient permission on host A will be able to use that socket to connect
 to and use your local ssh-agent. It could be the root user or anyone else who
@@ -123,9 +123,41 @@ leave it in the comments. I'll follow up this post with a general breakdown of
 some of the awesome features that SSH has to offer. The `ProxyCommand` will
 play a key role, but there are lot's of other goodies hidden inside OpenSSH.
 
+Updates - March 4 2015
+======================
+
+After I posted this post on [r/netsec](https://www.reddit.com/r/netsec/) it
+quickly got quite few replies and some interesting discussions developed. As I
+mentioned in the post I was open for suggestions where ssh-agent might be hard
+to replace and how to use it more securely.
+
+One thing a number of people mentioned was using `ssh-agent -c` which will show
+a confirmation window each time some program wants to use the agent to
+authenticate somewhere. This is certainly a cool feature, though it will also
+trigger for local users (i.e. you) and thus might be annoying. 
+
+As for reasons to use SSH Agent Forwarding in the first place, there was one
+argument which I can relate to: Performance. If the hosts (jump-host and target
+host) are behind a slow uplink and you frequently have to get data from one
+host to the other it really sucks having to copy everything to your local
+workstation and then back up. Unless a dedicated key which resides on either of
+the hosts does the trick you're stuck with Agent Forwarding.
+
+The other reason I heard was "convenience". As I'll show with my next post on
+SSH, Agent Forwarding is a lot less convenient in a number of ways.
+
+A big problem about Agent Forwarding I forgot to mention is this by the way: If
+an attacker compromises Host A he can not only use your forwarded agent when
+you're connected but he is actually able to eavesdrop on your ongoing session.
+So even if you had an additional layer of security on Host B (password,
+time-based token), the attacker could read and modify everything about your
+session. ProxyCommand will prevent this from happening since the SSH session to
+Host B terminates on your workstation!
+
 References
 ==========
 
+* [r/netsec thread on this post](https://www.reddit.com/r/netsec/comments/2xdcgx/ssh_agent_forwarding_considered_harmful/)
 * [The perils of using an ssh-agent](https://www.reddit.com/r/netsec/comments/2m2zpb/the_perils_of_using_an_sshagent/) - Post which fails to mention ProxyCommand
 * [Good post on ssh-agent and ProxyCommand](http://sshmenu.sourceforge.net/articles/transparent-mulithop.html)
 * [Putting vpnc into a Linux network namespace](https://github.com/alonbl/vpnc-scripts/blob/master/vpnc-script-sshd)
