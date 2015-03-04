@@ -124,6 +124,17 @@ div.site h1:first-child {
     margin-right: 3em;
 }
 
+div.icons a {
+    font-size: 2em;
+    color: #1f1f1f;
+    margin: 2px;
+}
+
+div.icons p a:hover {
+    color: #1f1f1f;
+    text-decoration: none;
+}
+
 .site .footer .contact a,
 .site .footer .rss a {
     color: #8085C1;

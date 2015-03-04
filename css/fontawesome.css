@@ -274,3 +274,4 @@ ul.icons li [class*=" icon-"] {
 .icon-github:before		{ content: "\f024"; }
 .icon-rss:before		{ content: "\f025"; }
 .icon-linkedin:before		{ content: "\f026"; }
+.icon-flickr:before     { content: "\f16e"; }
