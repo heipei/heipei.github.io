@@ -69,11 +69,11 @@ simple example:
 
 {% highlight bash %}
 Host hosta
-	Username userfoo
+	User userfoo
 	Hostname 123.123.123.123
 
 Host hostb
-	Username userbar
+	User userbar
 	Hostname 192.168.1.1
 	Port 2222
 	ProxyCommand ssh -q -W %h:%p hosta

@@ -157,7 +157,7 @@ ul.posts {
 }
 
 ul.posts li {
-    line-height: 1.5em;
+    line-height: 1.75em;
     border-bottom: 1px solid #eee;
 }
 
@@ -271,3 +271,14 @@ div#profile_picture {
     }
 }
 
+@media screen and (max-device-width: 700px) {
+    .site {
+        width: auto;
+        max-width: 100%;
+        padding: 1em;
+    }
+
+    * {
+        font-size: 20px;
+    }
+}
