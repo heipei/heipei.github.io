@@ -5,6 +5,9 @@ title: SSH Agent Forwarding considered harmful
 
 **tl;dr**: Don't use SSH `ForwardAgent`, it's stupid and insecure. Use `ProxyCommand` instead.
 
+* [Hackernews thread on this post](https://news.ycombinator.com/item?id=9425805)
+* [r/netsec thread on this post](https://www.reddit.com/r/netsec/comments/2xdcgx/ssh_agent_forwarding_considered_harmful/)
+
 Introduction
 ============
 
@@ -157,6 +160,7 @@ Host B terminates on your workstation!
 References
 ==========
 
+* [Hackernews thread on this post](https://news.ycombinator.com/item?id=9425805)
 * [r/netsec thread on this post](https://www.reddit.com/r/netsec/comments/2xdcgx/ssh_agent_forwarding_considered_harmful/)
 * [The perils of using an ssh-agent](https://www.reddit.com/r/netsec/comments/2m2zpb/the_perils_of_using_an_sshagent/) - Post which fails to mention ProxyCommand
 * [Good post on ssh-agent and ProxyCommand](http://sshmenu.sourceforge.net/articles/transparent-mulithop.html)
