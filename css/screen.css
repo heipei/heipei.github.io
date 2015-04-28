@@ -49,10 +49,64 @@ blockquote {
     margin-left:1em;
 }
 
+blockquote p {
+    font-style: italic;
+}
+blockquote{
+    display:block;
+    background: #fff;
+    padding: 15px 20px 15px 45px;
+    margin: 0 0 20px;
+    position: relative;
+
+    /*
+    border-left: 10px solid #ab3027;
+    border-right: 2px solid #ab3027;
+
+    -moz-box-shadow: 2px 2px 15px #ccc;
+    -webkit-box-shadow: 2px 2px 15px #ccc;
+    box-shadow: 2px 2px 15px #ccc;
+    */
+}
+
+blockquote::before{
+    content: "\201C"; /*Unicode for Left Double Quote*/
+
+    /*Font*/
+    font-size: 60px;
+    font-weight: bold;
+    color: #999;
+
+    /*Positioning*/
+    position: absolute;
+    left: 10px;
+    top:5px;
+}
+
+blockquote::after{
+    /*Reset to make sure*/
+    content: "";
+}
+
+blockquote a{
+    text-decoration: none;
+    background: #eee;
+    cursor: pointer;
+    padding: 0 3px;
+    color: #c76c0c;
+}
+
+blockquote a:hover{
+    color: #666;
+}
+
+blockquote em{
+    font-style: italic;
+}
+
 .site {
     max-width: 700px;
     margin: 0em auto 0em auto;
-    line-height: 1.3em;
     padding: 0em 0.5em 0 0.5em;
 }
 
@@ -64,6 +118,7 @@ blockquote {
 
 .header .site .title a {
     color: #ffffff;
+    line-height: 1.3em;
 }
 .header .site .title a:hover, .header .site .title a:visited:hover {
     color: #dddddd;
@@ -147,8 +202,11 @@ div.icons p a:hover {
     float: right;
 }
 
-div.home ul {
+ul {
     list-style-type: square;
+}
+
+div.home ul {
     margin-bottom: 2em;
     margin-left: 10px;
     padding-left: 10px;
@@ -173,9 +231,14 @@ ul.posts li span.date {
     float: right;
 }
 
+#post {
+    line-height: 1.4em;
+}
+
+ul li {
+    margin-bottom: 2px;
+}
 #post pre {
-    border: 1px solid #ddd;
-    background-color: #eef;
     padding: 0 .4em;
     overflow-x: auto;
     white-space: pre-wrap;
@@ -190,18 +253,11 @@ ul.posts li span.date {
     margin-left: 1.35em;
 }
 
-#post code {
-  padding: 0px;
-  line-height: 1em;
-  text-align: left;
-}
-
-#post pre {
-    border: 1px solid #ddd;
-}
-
 pre, code {
   font-family: 'Ubuntu Mono', monospace;
+  font-size: 0.95em;
+  line-height: 1.4em;
+  letter-spacing: -0.05em;
 }
 
 #post pre.terminal {
@@ -281,4 +337,14 @@ div#profile_picture {
     * {
         font-size: 20px;
     }
+}
+
+.highlight .lineno { color: #ccc; 
+    display:inline-block; 
+    padding: 0 5px;
+    border-right:1px solid #ccc; 
+}
+
+.highlight pre code {
+    display: block;
 }

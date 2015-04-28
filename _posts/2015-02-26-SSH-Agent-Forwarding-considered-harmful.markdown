@@ -70,7 +70,7 @@ OpenSSH has an option called `ProxyCommand`. It works by specifying a
 ProxyCommand to connect to host B. The config would look like this for our
 simple example:
 
-{% highlight bash %}
+{% highlight apache linenos %}
 Host hosta
 	User userfoo
 	Hostname 123.123.123.123
