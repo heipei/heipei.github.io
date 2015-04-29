@@ -1,6 +1,6 @@
 ---
 layout: post
-title: SSH - Secure Networking Swiss-Army Knife
+title: OpenSSH - Secure Networking Swiss-Army Knife
 ---
 
 **tl;dr**: Well-known yet underused OpenSSH features and their applications in
