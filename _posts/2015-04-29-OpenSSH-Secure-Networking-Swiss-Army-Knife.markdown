@@ -6,6 +6,9 @@ title: OpenSSH - Secure Networking Swiss-Army Knife
 **tl;dr**: Well-known yet underused OpenSSH features and their applications in
 building secure systems.
 
+* [r/netsec thread](https://www.reddit.com/r/netsec/comments/34az9p/openssh_secure_networking_swissarmy_knife/)
+* [Hackernews thread](https://news.ycombinator.com/item?id=9460608)
+
 Introduction
 ============
 
