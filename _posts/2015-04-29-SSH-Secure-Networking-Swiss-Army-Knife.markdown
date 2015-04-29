@@ -60,9 +60,10 @@ don't trust systems like fail2ban enough.
   eliminate practically any noise in the TCP logs: `Port 12345` in `sshd_config`
 * Setup rate-limiting to your SSH listening port just in case:
 
-{% highlight apache %}
+{% highlight bash %}
 iptables -A INPUT -p tcp --dport 12345 -m conntrack --ctstate NEW -m recent --set
-iptables -A INPUT -p tcp --dport 12345 -m conntrack --ctstate NEW -m recent --update --seconds 120 --hitcount 3 -j DROP
+iptables -A INPUT -p tcp --dport 12345 -m conntrack --ctstate NEW -m recent \
+	--update --seconds 120 --hitcount 3 -j DROP
 iptables -A INPUT -p tcp --dport 12345 -j ACCEPT
 {% endhighlight %}
 
@@ -211,16 +212,6 @@ for some unsupervised applications:
 For a constant connection you can simply run `ssh` via some process supervisor
 like runit.
 
-Going further
-=============
-
-Topics not mentioned here include:
-
-* [mosh](https://mosh.mit.edu/) - A roaming-friendly secure shell built upon SSH
-* [autossh](http://www.harding.motd.ca/autossh/) - Automatically restarts SSH session
-* dropbear - To remotely unlock LUKS-protected root drives
-* [sshfs](https://wiki.archlinux.org/index.php/Sshfs) - FUSE-based remote mounting of paths
-
 Conclusion
 ==========
 
@@ -243,9 +234,20 @@ authentication or transport security. Here, SSH can be used as a security
 layer, even if only during development. The same is true for supposedly secure
 protocols which you still don't trust entirely. Used correctly, OpenSSH is a
 very robust system that does authentication, authorization and proper transport
-security, built into your operating system. Also consider that OpenSSH is one
-of the pieces of your userland toolkit which is most closely reviewed and at
-the same time still being actively developed by the OpenBSD community.
+security and is part of every conceivable distribution. Also consider that
+OpenSSH is one of the pieces of your userland toolkit which is most closely
+reviewed and at the same time still being actively developed by the OpenBSD
+community.
+
+Going further
+=============
+
+Topics not mentioned here include:
+
+* [mosh](https://mosh.mit.edu/) - A roaming-friendly secure shell built upon SSH
+* [autossh](http://www.harding.motd.ca/autossh/) - Automatically restarts SSH session
+* [dropbear](https://wiki.archlinux.org/index.php/Dm-crypt/Specialties#Remote_unlocking_of_the_root_.28or_other.29_partition) - To remotely unlock LUKS-protected root drives
+* [sshfs](https://wiki.archlinux.org/index.php/Sshfs) - FUSE-based remote mounting of paths
 
 References
 ==========
