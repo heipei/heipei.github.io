@@ -22,7 +22,7 @@ The problem with SSH Agent Forwarding
 =====================================
 
 SSH Agent Forwarding can be enabled by calling `ssh -A` or by setting the
-`AgentForward` flag in your config. It is meant as an easy way to connect to a
+`ForwardAgent` flag in your config. It is meant as an easy way to connect to a
 host A with your SSH key and from there connect to another host B with that
 same key. This obviously is only needed if you cannot connect to host B
 directly from your workstation.
