@@ -17,7 +17,7 @@ body {
 }
 
 h1 {
-    font-size: 110%;
+    font-size: 1.1em;
     margin-bottom: 1em;
 }
 
@@ -43,6 +43,16 @@ a:hover, a:visited:hover {
 table {
     font-size: inherit;
     font: 100%;
+}
+
+table {
+    border-collapse: collapse;
+    border-style: hidden;
+}
+
+table td, table th {
+    border: 1px solid black;
+    padding: 5px;
 }
 
 blockquote {
@@ -129,7 +139,7 @@ h1, h2, h3, h4, h5, h6, .comments {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-size: 120%;
+    font-size: 1.1em;
     font-weight: 400;
     margin-top: 1em;
     color: rgb(171, 48, 39);
@@ -137,7 +147,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 h1 {
-  font-size: 130%;
+  font-size: 1.4em;
 }
 
 div.site h1:first-child {
