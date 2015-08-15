@@ -3,7 +3,7 @@ layout: post
 title: Using hpfriends - the social data-sharing platform
 ---
 
-*Abstract*: This post introduces the [hpfriends](http://hpfriends.honeycloud.net) system, which is a a new sharing model
+*Abstract*: This post introduces the [hpfriends](https://hpfriends.honeycloud.net) system, which is a a new sharing model
 and web frontend for the hpfeeds data-sharing platform. Readers will learn how to use the hpfriends frontend to publish
 and subscribe to data-channels in the hpfeeds system and share their data with other users. There is a [separate
 post](/2013/05/10/The-architecture-behind-hpfriends/) on the architecture of hpfriends.
@@ -138,11 +138,11 @@ Using hpfeeds with dionaea <a name="dionaea">&nbsp;</a>
 ==========================
 
 One of the sensors that supports hpfeeds is dionaea - the most modern low-interaction server honeypot. This software is
-also the source for most events currently showing up on the [HoneyMap](http://map.honeynet.org). Sadly the hpfeeds module is not part of the
+also the source for most events currently showing up on the [HoneyMap](https://map.honeynet.org). Sadly the hpfeeds module is not part of the
 official git repository, so we need to make a small change to its setup steps.
 
 To setup dionaea you need to follow the official setup instructions
-([dionaea.carnivore.it](http://dionaea.carnivore.it/#compiling)) and then use the git URL
+([dionaea.carnivore.it](https://dionaea.carnivore.it/#compiling)) and then use the git URL
 `git://github.com/rep/dionaea.git` instead of the normal dionaea one. This will include the hpfeeds module and the
 appropriate config section in the honeypot. After it compiled correctly and you installed dionaea on your system, you
 need to edit the `dionaea.conf` file and enter your hpfeeds credentials, as well as enable the module. You get the
@@ -158,7 +158,7 @@ like:
              ident = "<your_authkey_identifier>"
              secret = "<your_authkey_secret>"
              // dynip_resolve: enable to lookup the sensor ip through a webservice
-             dynip_resolve = "http://hpfriends.honeycloud.net/ip"
+             dynip_resolve = "https://hpfriends.honeycloud.net/ip"
            }
          }
     ...
@@ -181,9 +181,9 @@ Further reading
 
 hpfriends is maintained by [Mark 'rep' Schloesser](https://twitter.com/repmovsb) and [Johannes 'heipei' Gilger](https://twitter.com/heipei)
 
-* [hpfriends](http://hpfriends.honeycloud.net) - the hpfriends website
+* [hpfriends](https://hpfriends.honeycloud.net) - the hpfriends website
 * [hpfeeds](https://github.com/rep/hpfeeds) - hpfeeds GitHub repo
 * [hpfeeds-ruby](https://github.com/vicvega/hpfeeds-ruby) - Ruby gem for hpfeeds
 * [go-hpfeeds](https://github.com/fw42/go-hpfeeds) - Go implementation of hpfeeds
-* [Honeynet](http://honeynet.org/) - The Honeynet Project
-* [HoneyMap](http://map.honeynet.org/) - The HoneyMap, which uses hpfeeds
+* [Honeynet](https://honeynet.org/) - The Honeynet Project
+* [HoneyMap](https://map.honeynet.org/) - The HoneyMap, which uses hpfeeds

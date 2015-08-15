@@ -25,7 +25,7 @@ relic disk format which could be used to create incremental backups by burning t
 about it, but UDF can also be used as a filesystem for read-write media, and current operating systems support it just
 fine. To top it of, UDF is both case-sensitive and case-preserving and has POSIX file permissions, not something to take
 for granted even with modern filesystems. A tabular feature comparison between UDF, NTFS, FAT32 and exFAT can be found in
-the [Windows Dev Center](http://msdn.microsoft.com/en-us/library/windows/desktop/ee681827).
+the [Windows Dev Center](https://msdn.microsoft.com/en-us/library/windows/desktop/ee681827).
 
 Creating a UDF drive
 ====================
@@ -90,7 +90,7 @@ have the time to investigate I simply switched that disk back to ext4 for now.
 References
 ==========
 
-* [UDF and fstab without UUID](http://osquestions.com/unix-linux/35973/udf-and-fstab-no-uuid)
-* [Creating UDF filesystem using mkudffs](http://tanguy.ortolo.eu/blog/article93/usb-udf)
+* [UDF and fstab without UUID](https://osquestions.com/unix-linux/35973/udf-and-fstab-no-uuid)
+* [Creating UDF filesystem using mkudffs](https://tanguy.ortolo.eu/blog/article93/usb-udf)
 * [Arch Linux on Disk Encryption](https://wiki.archlinux.org/index.php/disk_encryption#compatibility_.26_prevalence)
 

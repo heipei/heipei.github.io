@@ -4,7 +4,7 @@ title: The architecture behind hpfriends
 ---
 
 *Abstract*: In this post, readers will gain some insight into the architecture of the
-[hpfriends](http://hpfriends.honeycloud.net) platform. Users who want to learn how to use hpfriends should have a look
+[hpfriends](https://hpfriends.honeycloud.net) platform. Users who want to learn how to use hpfriends should have a look
 at the guide on [using hpfriends](/2013/05/11/Using-hpfriends-the-social-data-sharing-platform).
 
 Introduction
@@ -69,16 +69,16 @@ Implementation
 
 The hpfriends system is still very much work-in-progress, which is why the implementation details are subject to change.
 
-The sharing graph was realized with the [Neo4j](http://www.neo4j.org/) database, an Open-Source graph-database
+The sharing graph was realized with the [Neo4j](https://www.neo4j.org/) database, an Open-Source graph-database
 implemented in Java. Although Neo4j enables very efficient graph storage and operations it does have a few quirks.
 Concerning hpfeeds, it is obviously quite impractical and unnecessary to do a lookup on the sharing graph for each new
 message on a channel. Instead, we traverse the graph if the sharing relationships change and save the sharing attributes
 in a flat format afterwars.
 
-For the web frontend we decided to go with the [Meteor](http://www.meteor.com/) JavaScript framework. Meteor is still
+For the web frontend we decided to go with the [Meteor](https://www.meteor.com/) JavaScript framework. Meteor is still
 being developed with frequent significant changes. But it enabled us to create a relatively simple real-time web
 application without having to worry about a lot of aspects. We chose to stick with the [Twitter
-Bootstrap](http://twitter.github.io/bootstrap/) HTML/CSS framework for the visual elements.
+Bootstrap](https://twitter.github.io/bootstrap/) HTML/CSS framework for the visual elements.
 
 The [reference implementation for hpfeeds](https://github.com/rep/hpfeeds) was done in Python, but there are projects to
 bring hpfeeds support to [Go](https://github.com/fw42/go-hpfeeds) and [Ruby](https://github.com/fw42/hpfeedsrb). If you
@@ -89,9 +89,9 @@ Further reading
 
 hpfriends is maintained by [Mark 'rep' Schloesser](https://twitter.com/repmovsb) and [Johannes 'heipei' Gilger](https://twitter.com/heipei)
 
-* [hpfriends](http://hpfriends.honeycloud.net) - the hpfriends website
+* [hpfriends](https://hpfriends.honeycloud.net) - the hpfriends website
 * [hpfeeds](https://github.com/rep/hpfeeds) - hpfeeds GitHub repo
 * [hpfeeds-ruby](https://github.com/vicvega/hpfeeds-ruby) - Ruby gem for hpfeeds, maintained by [Francesco Coda Zabetta](https://github.com/vicvega)
 * [go-hpfeeds](https://github.com/fw42/go-hpfeeds) - Go implementation of hpfeeds, maintained by [Florian 'fw' Weingarten](https://twitter.com/fw1729)
-* [Honeynet](http://honeynet.org/) - The Honeynet Project
-* [HoneyMap](http://map.honeynet.org/) - The HoneyMap, which uses hpfeeds
+* [Honeynet](https://honeynet.org/) - The Honeynet Project
+* [HoneyMap](https://map.honeynet.org/) - The HoneyMap, which uses hpfeeds

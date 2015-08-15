@@ -163,7 +163,7 @@ References
 * [Hackernews thread on this post](https://news.ycombinator.com/item?id=9425805)
 * [r/netsec thread on this post](https://www.reddit.com/r/netsec/comments/2xdcgx/ssh_agent_forwarding_considered_harmful/)
 * [The perils of using an ssh-agent](https://www.reddit.com/r/netsec/comments/2m2zpb/the_perils_of_using_an_sshagent/) - Post which fails to mention ProxyCommand
-* [Good post on ssh-agent and ProxyCommand](http://sshmenu.sourceforge.net/articles/transparent-mulithop.html)
+* [Good post on ssh-agent and ProxyCommand](https//sshmenu.sourceforge.net/articles/transparent-mulithop.html)
 * [Putting vpnc into a Linux network namespace](https://github.com/alonbl/vpnc-scripts/blob/master/vpnc-script-sshd)
-* [Linux network namespaces in operation](http://lwn.net/Articles/580893/)
+* [Linux network namespaces in operation](https://lwn.net/Articles/580893/)
 

@@ -209,7 +209,7 @@ for some unsupervised applications:
   application from A to B.
 * A key which can only do backups to a certain location using a
   [forced command like
-  rrsync](http://www.guyrutenberg.com/2014/01/14/restricting-ssh-access-to-rsync/).
+  rrsync](https://www.guyrutenberg.com/2014/01/14/restricting-ssh-access-to-rsync/).
 * A key which can only forward to another internal SSH host (`ProxyCommand`).
 
 For a constant connection you can simply run `ssh` via some process supervisor
@@ -248,7 +248,7 @@ Going further
 Topics not mentioned here include:
 
 * [mosh](https://mosh.mit.edu/) - A roaming-friendly secure shell built upon SSH
-* [autossh](http://www.harding.motd.ca/autossh/) - Automatically restarts SSH session
+* [autossh](https://www.harding.motd.ca/autossh/) - Automatically restarts SSH session
 * [dropbear](https://wiki.archlinux.org/index.php/Dm-crypt/Specialties#Remote_unlocking_of_the_root_.28or_other.29_partition) - To remotely unlock LUKS-protected root drives
 * [sshfs](https://wiki.archlinux.org/index.php/Sshfs) - FUSE-based remote mounting of paths
 
@@ -256,7 +256,7 @@ References
 ==========
 
 * [Arch Linux Wiki on OpenSSH](https://wiki.archlinux.org/index.php/Secure_Shell) - Not surprisingly a very exhaustive reference.
-* [ssh tricks - the usual and beyond](http://www.jedi.be/blog/2010/08/27/ssh-tricks-the-usual-and-beyond/) - Good post covering most of the same topics.
+* [ssh tricks - the usual and beyond](https://www.jedi.be/blog/2010/08/27/ssh-tricks-the-usual-and-beyond/) - Good post covering most of the same topics.
 * [Secure Secure Shell](https://stribika.github.io/2015/01/04/secure-secure-shell.html) - Timely OpenSSH crypto hardening post.
 * [OpenSSH hardening tips](http://docs.hardentheworld.org/Applications/OpenSSH/)
 * [ProxyCommand multi-hop magic](http://sshmenu.sourceforge.net/articles/transparent-mulithop.html)
