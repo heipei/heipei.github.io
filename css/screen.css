@@ -321,16 +321,22 @@ div#profile_picture {
 }
 
 @media screen and (max-width: 550px) {
-    span.date {
+    ul.posts li span.date {
         display: none;
     }
 }
 
 @media screen and (max-device-width: 700px) {
+    ul.posts li span.date {
+        display: block;
+        font-size: 1.5em;
+    }
     .site {
         width: auto;
         max-width: 100%;
         padding: 1em;
+    }
+    .site .title {
     }
 
     * {
