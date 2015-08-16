@@ -11,6 +11,9 @@ Web Compromise (SWC) to facilitate reconnaisance and exploitation of selected
 targets over time. The actual attack does *not* rely on caching and is
 described in [attack](#attack).
 
+* [r/netsec thread](https://www.reddit.com/r/netsec/comments/3h8bbj/html5_persistent_appcache_injections/)
+* [Hackernews thread](https://news.ycombinator.com/item?id=10070009)
+
 Outline
 =======
 * [Introduction](#introduction) - What made me research this attack
