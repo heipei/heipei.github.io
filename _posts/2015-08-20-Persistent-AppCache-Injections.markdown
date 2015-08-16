@@ -270,7 +270,7 @@ Our method:
 | -------| ------ | ------- | ------ | ----- | -- |
 | Reload / Browse | Persist | Persist | Persist | Persist | Persist |
 | Hard-Reload | Persist | Persist | Persist | Persist | Persist |
-| Cache disable | Clear | NA | Persist | NA | NA |
+| Cache disable | Clear | NA | Persist | NA | Clear |
 | Preferences | Clear | Clear | Clear | Clear | Clear |
 
 Homakov:
@@ -279,8 +279,8 @@ Homakov:
 | Method | Chrome | Firefox | Safari | Opera | IE |
 | -------| ------ | ------- | ------ | ----- | -- |
 | Reload / Browse | Persist | Persist | Persist once | Persist | Persist |
-| Hard-Reload | Clear | Clear | Clear | Clear | Clear |
-| Cache disable | Clear | NA | Clear | NA | NA |
+| Hard-Reload | Persist | Persist | Clear | Persist | Persist |
+| Cache disable | Clear | NA | Clear | NA | Clear |
 | Preferences | Clear | Clear | Clear | Clear | Clear |
 
 As I said, browser caching is a complex topic. Suffice to say, employing only
