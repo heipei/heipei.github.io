@@ -65,8 +65,8 @@ blockquote p {
 blockquote{
     display:block;
     background: #fff;
-    padding: 15px 20px 15px 45px;
-    margin: 0 0 20px;
+    padding: 10px 20px 10px 45px;
+    margin: 0 0 5px;
     position: relative;
 
     /*
