@@ -4,10 +4,10 @@ title: nginx-sso - Simple offline SSO for nginx
 ---
 
 **tl;dr**: [nginx-sso](https://github.com/heipei/nginx-sso) is a lightweight,
-offline SSO-system which works with cookies and ECDSA. It can easily be used in
-together with vanilla nginx and any backend application. The reference
-implementation is written in golang and has some cool additional features such
-as authorization.
+offline Single-Sign-On (SSO) system which works with cookies and ECDSA. It can
+easily be used in together with vanilla nginx and any backend application. The
+reference implementation is written in golang and has some cool additional
+features such as authorization.
 
 This posts describes the technical background of the system, especially the
 motivation for using such a system as opposed to other established SSO
