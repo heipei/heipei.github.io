@@ -367,3 +367,7 @@ div#profile_picture {
 div.highlight {
   margin: 0px 10px 0px 10px;
 }
+
+img {
+    max-width: 100%;
+}
