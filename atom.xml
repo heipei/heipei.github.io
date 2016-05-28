@@ -1,27 +1,1749 @@
----
-layout: null
----
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="https://www.w3.org/2005/Atom">
  
  <title>Johannes 'heipei' Gilger</title>
  <link href="https://heipei.github.io/atom.xml" rel="self"/>
  <link href="https://heipei.github.io/"/>
- <updated>{{ site.time | date_to_xmlschema }}</updated>
+ <updated>2016-05-28T11:43:39+02:00</updated>
  <id>https://heipei.github.io/</id>
  <author>
    <name>Johannes Gilger</name>
    <email>heipei@hackvalue.de</email>
  </author>
 
- {% for post in site.posts %}
+ 
  <entry>
-   <title>{{ post.title }}</title>
-   <link href="{{ site.url }}{{ post.url }}"/>
-   <updated>{{ post.date | date_to_xmlschema }}</updated>
-   <id>{{ site.url }}{{ post.id }}</id>
-   <content type="html">{{ post.content | xml_escape }}</content>
+   <title>Jekyll and responsive Flickr photos</title>
+   <link href="https://heipei.github.io/2016/05/28/jekyll-and-responsive-flickr-photos/"/>
+   <updated>2016-05-28T00:00:00+02:00</updated>
+   <id>https://heipei.github.io/2016/05/28/jekyll-and-responsive-flickr-photos</id>
+   <content type="html">&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+
+&lt;p&gt;My personal blog over at &lt;a href=&quot;https://heipei.net&quot;&gt;heipei.net&lt;/a&gt; is a little different to this one. Rather than text- and
+code-heavy content, it is mostly photos with some text in between. I’ve already spent countless hours optimizing every
+performance aspect of the site, sometimes including brand-new directives such as preconnect hints. But at some point
+there is no way around the fact that the blog contains a lot of high-fidelity images from Flickr, a site that is known
+to not compress it’s photos aggresively, which is a good thing for photographers.&lt;/p&gt;
+
+&lt;p&gt;So the only way to improve the perceived performance is to load photos only when they are needed, i.e. when they’re
+about to become visible. This is known as &lt;em&gt;lazy-loading&lt;/em&gt; and can be accomplished quite easily using a variety of
+JavaScript libraries. I combined lazy-loading with a simple mechanism for responsivesness to make it work better for my
+use case. This will certainly not fit all applications, but should give you an idea just how easy it is do implement
+something like this yourself.&lt;/p&gt;
+
+&lt;h1 id=&quot;getting-flickr-photo-urls&quot;&gt;Getting flickr photo URLs&lt;/h1&gt;
+
+&lt;p&gt;Flickr used to have a more generic &lt;em&gt;Share&lt;/em&gt; dialog. Unfortunately, nowadays they only offer an intrusive JavaScript-based
+snippet for embedding photos in your website. It works well enough, but neither do I need it nor do I want additional
+JavaScript on my site. The way I go about this is to copy the &lt;em&gt;Embed&lt;/em&gt; URL and transform it in my paste-buffer:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;a&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;data-flickr-embed=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;true&amp;quot;&lt;/span&gt;  &lt;span class=&quot;na&quot;&gt;href=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://www.flickr.com/photos/heipei/26979354391/in/photostream&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;title=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Wanderung&lt;/span&gt;
+&lt;span class=&quot;s&quot;&gt;Grenzroute 2&amp;quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&amp;lt;img&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://c8.staticflickr.com/8/7245/26979354391_54884d1976_b.jpg&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;width=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;1024&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;height=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;683&amp;quot;&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;alt=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Wanderung Grenzroute 2&amp;quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&amp;lt;/a&amp;gt;&amp;lt;script &lt;/span&gt;&lt;span class=&quot;na&quot;&gt;async&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;//embedr.flickr.com/assets/client-code.js&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;charset=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;utf-8&amp;quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&amp;lt;/script&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Transformed via:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;pbpaste&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;sed -e &lt;span class=&quot;s2&quot;&gt;&amp;quot;s/data-.*  href/href/&amp;quot;&lt;/span&gt; -e &lt;span class=&quot;s2&quot;&gt;&amp;quot;s/\/in\/dateposted-public//&amp;quot;&lt;/span&gt; -e &lt;span class=&quot;s2&quot;&gt;&amp;quot;s/width.*alt/alt/&amp;quot;&lt;/span&gt; -e
+&lt;span class=&quot;s2&quot;&gt;&amp;quot;s/&amp;lt;script.*script&amp;gt;//&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;|&lt;/span&gt;pbcopy&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;which gives me:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;a&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;href=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://www.flickr.com/photos/heipei/26979354391/in/photostream&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;title=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Wanderung Grenzroute 2&amp;quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&amp;lt;img&lt;/span&gt;
+&lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://c8.staticflickr.com/8/7245/26979354391_54884d1976_b.jpg&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;alt=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Wanderung Grenzroute 2&amp;quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&amp;lt;/a&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This is the format I use in my Jekyll blog-posts. I get rid of &lt;code&gt;width&lt;/code&gt; and &lt;code&gt;height&lt;/code&gt; as well since I might always change
+the dimensions of this blog in the future.&lt;/p&gt;
+
+&lt;h1 id=&quot;lazy-loading&quot;&gt;Lazy loading&lt;/h1&gt;
+
+&lt;p&gt;For lazy-loading, I used the &lt;a href=&quot;https://github.com/toddmotto/echo&quot;&gt;echo.js library&lt;/a&gt;, though I suppose that any similar
+library would do. The way that echo.js works is by not setting the &lt;code&gt;src&lt;/code&gt; attribute of the image but rather setting the
+URL of the image in the &lt;code&gt;data-echo&lt;/code&gt; attribute. Then, at runtime, the echo.js library can set the &lt;code&gt;src&lt;/code&gt; attribute just in
+time when the viewer is about to scroll to the image.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;img&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;loading.gif&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;data-echo=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://flickr.com/photo.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;I’ve used a variety of these libraries over the lifetime of my blog, so whenever I switched to a new one I would have to
+go back and edit the image tags of all old post to accomodate the new way the library would do lazy loading. Quite
+painful. Since I’m using Jekyll now I’ve simply included a preprocessing step for image tags. In &lt;code&gt;_layouts/post.html&lt;/code&gt;
+I’m using&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;p&quot;&gt;{{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;content&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;replace_regex&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;img src=&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&amp;#39;img src=&amp;quot;/images/ajax.gif&amp;quot; data-echo=&amp;#39;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Which will transform regular image tags like&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;img&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://c8.staticflickr.com/8/7245/26979354391_54884d1976_b.jpg&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;alt=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Wanderung Grenzroute 2&amp;quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;into this HTML for the output:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;img&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;/images/ajax.gif&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;data-echo=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://c8.staticflickr.com/8/7245/26979354391_54884d1976_b.jpg&amp;quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;alt=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;Wanderung Grenzroute 2&amp;quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The beauty of using the Jekyll processing step is that I can turn echo.js of at
+any moment if I no longer want to use it.&lt;/p&gt;
+
+&lt;h1 id=&quot;responsive-flickr-images&quot;&gt;Responsive flickr images&lt;/h1&gt;
+
+&lt;p&gt;Lazy loading already works wonders for page-load speed on any device. The other big issue that I faced was the enormous
+size of flickr photos. For landscape-photos, I include the &lt;em&gt;large&lt;/em&gt; size, which is 1024px wide. For my latest post, just
+&lt;a href=&quot;https://c8.staticflickr.com/8/7245/26979354391_54884d1976_b.jpg&quot;&gt;the first photo&lt;/a&gt; is a whopping 362kB of incompressible
+JPG data. The next smaller size, called &lt;em&gt;medium&lt;/em&gt; at 800px wide, is 250kB in size, already a big improvement. For small
+devices (say 480px wide), I can get away with the &lt;em&gt;medium&lt;/em&gt; size at 500px wide at about 100kB, a three-fold improvement.&lt;/p&gt;
+
+&lt;p&gt;Flickr offers photos in a variety of pre-defined sizes, &lt;a href=&quot;https://www.flickr.com/services/api/misc.urls.html&quot;&gt;indicated by the filename
+suffix&lt;/a&gt;. This makes it straightforward to replace images with a
+simple substitute. I thought about it a little bit, and came up with this simple workflow:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Images are included in the page in their biggest size, using the &lt;code&gt;data-echo&lt;/code&gt; attribute&lt;/li&gt;
+  &lt;li&gt;If an image has width/height set, those settings will be removed&lt;/li&gt;
+  &lt;li&gt;I will only downsize images that have not been loaded yet&lt;/li&gt;
+  &lt;li&gt;I will upsize images that have already been loaded, if the size of the viewport changes&lt;/li&gt;
+  &lt;li&gt;I’m replacing &lt;em&gt;large&lt;/em&gt; (1024px) images with &lt;em&gt;medium&lt;/em&gt; (500px) images (360kB to 100kB for our example)&lt;/li&gt;
+  &lt;li&gt;I’m replacing &lt;em&gt;medium&lt;/em&gt; (800px) images with &lt;em&gt;small&lt;/em&gt; (320px) images (250kB to 37kB for our example)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Comparing a desktop load and a simulated Nexus 5x load of my most recent blog post:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/jekyll-flickr-native.png&quot; alt=&quot;Desktop load&quot; title=&quot;Desktop load&quot; /&gt;
+&lt;br /&gt;&lt;small&gt;Desktop load&lt;/small&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/jekyll-flickr-mobile.png&quot; alt=&quot;Mobile load&quot; title=&quot;Mobile load&quot; /&gt;
+&lt;br /&gt;&lt;small&gt;Mobile load (Nexus 5x)&lt;/small&gt;&lt;/p&gt;
+
+&lt;p&gt;This is the simple Coffeescript-code to achieve just that&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-coffee&quot; data-lang=&quot;coffee&quot;&gt;&lt;span class=&quot;nb&quot;&gt;document&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;addEventListener&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;DOMContentLoaded&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;() -&amp;gt;&lt;/span&gt;
+
+  &lt;span class=&quot;nv&quot;&gt;resize_flickr_images = &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;(size=&amp;quot;small&amp;quot;) -&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;imgs = &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;document&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;querySelectorAll&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;img&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;img&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;imgs&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;attrib&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;data-echo&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;src&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;original_url = url = &lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;img&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;getAttribute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;attrib&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;continue&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;unless&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;?&lt;/span&gt;
+
+        &lt;span class=&quot;c1&quot;&gt;# Remove width/height for all flickr images&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;match&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://.*\.static\.?flickr.com/.*&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;nx&quot;&gt;img&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;removeAttribute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;width&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;nx&quot;&gt;img&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;removeAttribute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;height&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+        &lt;span class=&quot;c1&quot;&gt;# Only downsize images if they haven&amp;#39;t been loaded yet (data-echo)&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;size&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;is&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;small&amp;quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;attrib&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;is&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;data-echo&amp;quot;&lt;/span&gt;
+          &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;match&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://.*\.static\.?flickr.com/.*_b.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;nv&quot;&gt;url = &lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;replace&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;_b.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; 
+          &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;match&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://.*\.static\.?flickr.com/.*_c.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;nv&quot;&gt;url = &lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;replace&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;_c.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;_n.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; 
+        
+        &lt;span class=&quot;c1&quot;&gt;# Always upsize flickr images&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;size&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;is&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;large&amp;quot;&lt;/span&gt;
+          &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;match&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://.*\.static\.?flickr.com/.*_n.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;nv&quot;&gt;url = &lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;replace&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;_n.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;_c.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; 
+          &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;match&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://.*\.static\.?flickr.com/.*_m.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;nv&quot;&gt;url = &lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;replace&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;_m.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;_n.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; 
+          &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;match&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;https://.*\.static\.?flickr.com/.*/[a-f0-9]{3,}_[a-f0-9]{3,}.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+            &lt;span class=&quot;nv&quot;&gt;url = &lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;replace&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;_b.jpg&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; 
+
+        &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;original_url&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;isnt&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;
+          &lt;span class=&quot;nx&quot;&gt;img&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;setAttribute&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;attrib&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;url&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+  &lt;span class=&quot;nv&quot;&gt;WidthChange = &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;(mq) -&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;mq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;matches&lt;/span&gt;
+      &lt;span class=&quot;nx&quot;&gt;resize_flickr_images&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;small&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;
+      &lt;span class=&quot;nx&quot;&gt;resize_flickr_images&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;large&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;matchMedia&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;mq = &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;window&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;matchMedia&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;#39;(max-width: 480px)&amp;#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;mq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;addListener&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;WidthChange&lt;/span&gt;
+    &lt;span class=&quot;nx&quot;&gt;WidthChange&lt;/span&gt; &lt;span class=&quot;nx&quot;&gt;mq&lt;/span&gt;
+
+  &lt;span class=&quot;c1&quot;&gt;# Init echo.js lazy loading&lt;/span&gt;
+  &lt;span class=&quot;nx&quot;&gt;echo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;init&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;offset: &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;400&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;throttle: &lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;150&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;unload: &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;
+
+&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h1 id=&quot;todo&quot;&gt;TODO&lt;/h1&gt;
+
+&lt;p&gt;This is still a very crude and not quite generic way to resize flickr photos. I imagine this could be done in a more
+generic fashion, e.g. as a small JavaScript library that can be included into pages to make any included flickr photos
+more responsive. But, as you can tell from the code above, the time spent searching for a library which does exactly
+what you need and does not interfere with the rest of your page usually takes longer than simply writing a few lines of
+JavaScript or CoffeeScript yourself.&lt;/p&gt;
+
+&lt;p&gt;If you have ideas on how to improve upon these techniques, let me know via the
+comments! I’ll upload the Jekyll source of my main blog to GitHub soon, once
+I’ve cleaned up the code base a little bit.&lt;/p&gt;
+</content>
  </entry>
- {% endfor %}
+ 
+ <entry>
+   <title>nginx-sso - Simple offline SSO for nginx</title>
+   <link href="https://heipei.github.io/2015/09/23/nginx-sso-Simple-offline-SSO-for-nginx/"/>
+   <updated>2015-09-23T00:00:00+02:00</updated>
+   <id>https://heipei.github.io/2015/09/23/nginx-sso-Simple-offline-SSO-for-nginx</id>
+   <content type="html">&lt;p&gt;&lt;strong&gt;tl;dr&lt;/strong&gt;: &lt;a href=&quot;https://github.com/heipei/nginx-sso&quot;&gt;nginx-sso&lt;/a&gt; is a lightweight,
+offline Single-Sign-On (SSO) system which works with cookies and ECDSA. It can
+easily be used in together with vanilla nginx and any backend application. The
+reference implementation is written in golang and has some cool additional
+features such as authorization.&lt;/p&gt;
+
+&lt;p&gt;This posts describes the technical background of the system, especially the
+motivation for using such a system as opposed to other established SSO
+solutions. If you want a technical description of the protocol and the
+authentication flow, consult the
+&lt;a href=&quot;https://github.com/heipei/nginx-sso/blob/master/TECHNICAL.md&quot;&gt;TECHNICAL.md&lt;/a&gt; in
+the GitHub repository.&lt;/p&gt;
+
+&lt;h1 id=&quot;outline&quot;&gt;Outline&lt;/h1&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;#introduction&quot;&gt;Introduction&lt;/a&gt; - Different types of SSO designs&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#features&quot;&gt;Features and similar software&lt;/a&gt; - What does nginx-sso do (that others don’t)&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#cookie-sso&quot;&gt;Cookie-based SSO solutions&lt;/a&gt; - A look at cookie-based SSO&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#auth_request&quot;&gt;Authentication&lt;/a&gt; - The nginx module that makes this work&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#authorization&quot;&gt;Authorization&lt;/a&gt; - The authorization / ACL functionality of nginx-sso&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#application&quot;&gt;Protecting applications with nginx-sso&lt;/a&gt; - Using this with your app and other software&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#future&quot;&gt;Future Work&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#references&quot;&gt;References&lt;/a&gt; - Similar projects&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a name=&quot;introduction&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;introduction-simple-web-based-sso&quot;&gt;Introduction: Simple web-based SSO&lt;/h1&gt;
+
+&lt;p&gt;When I was studying at &lt;a href=&quot;https://www.rwth-aachen.de/&quot;&gt;RWTH Aachen University&lt;/a&gt;, I
+had a student-job at the university NOC (&lt;a href=&quot;https://www.itc.rwth-aachen.de/&quot;&gt;Network Operation
+Center&lt;/a&gt;). What might sound like a boring
+sys-admin thing was really much more interesting as I got to develop
+applications and systems to work for the roughly 50.000 people at the
+university.  At some point we were told to make all of our applications work
+with the newly introduced SSO-system called
+&lt;a href=&quot;https://shibboleth.net/about/basic.html&quot;&gt;Shibboleth&lt;/a&gt; which we used in
+conjunction with
+&lt;a href=&quot;http://www.internet2.edu/products-services/trust-identity-middleware/grouper/&quot;&gt;Grouper&lt;/a&gt;.
+I’m not going to talk about Shibboleth today as it is a huge system with a
+different focus, but one thing that struck me was how easy it was to integrate
+applications with Shibboleth, once it was set up.&lt;/p&gt;
+
+&lt;h2 id=&quot;remote-user-and-remote-groups&quot;&gt;&lt;code&gt;Remote-User&lt;/code&gt; and &lt;code&gt;Remote-Groups&lt;/code&gt;&lt;/h2&gt;
+&lt;p&gt;Our Shibboleth setup worked by installing an Apache-module for each service
+which would perform all of the SSO magic for the backend application. All the
+backend application had to do was to consume the HTTP / environment variables
+&lt;code&gt;Remote-User&lt;/code&gt; and &lt;code&gt;Remote-Groups&lt;/code&gt; and do something with them.&lt;/p&gt;
+
+&lt;p&gt;All of the sudden, the headaches of user authentication and management were
+gone. No longer did your application have to implement user and credential
+storage and authentication, and for authorization if often sufficed to hardcode
+a specific Grouper-group into the application. Even better, a lot of available
+web applications already had some support for working with &lt;code&gt;Remote-User&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;sso-idps-openid-and-oauth&quot;&gt;SSO, IdPs, OpenID and OAuth&lt;/h2&gt;
+&lt;p&gt;My time at the NOC ended in 2010. Fast-forward to 2015 and look at the
+authentication landscape for modern web applications. Unless you are running
+inside some corporate context, chances are you have flirted with using existing
+Identity Providers (IdPs) for your project. You can choose between Google,
+Facebook, LinkedIn, GitHub and more sites, neatly covering your user-base.
+Outsourcing authentication to these guys is a better idea than (mis)handling
+user credentials yourself!&lt;/p&gt;
+
+&lt;p&gt;While these options are definitely the way to go for most applications, there
+are scenarios where they fall short:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;You might not trust these providers.&lt;/li&gt;
+  &lt;li&gt;Your applications might live “offline”, e.g. in a corporate network.&lt;/li&gt;
+  &lt;li&gt;You might want to protect static resources.&lt;/li&gt;
+  &lt;li&gt;You might be put off by the complexity of systems like OpenID Connect.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Another reality nowadays is that your app is quite likely to run behind another
+HTTP process. Many people (myself included) today use nginx for terminating
+TLS, load-balancing requests, etc. That’s why I decided to come up with my own
+lightweight SSO which works with nginx and arbitrary applications.&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&quot;features&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;features-and-similar-software&quot;&gt;Features and similar software&lt;/h1&gt;
+
+&lt;p&gt;When designing nginx-sso, I came up with a list of necessary and nice-to-have features:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Work offline: Neither the user nor the service has to talk to the Internet.&lt;/li&gt;
+  &lt;li&gt;Work disconnected: The service does not have to talk to the Identity Provider.&lt;/li&gt;
+  &lt;li&gt;Secure: Compromising a service must not impact any other service.&lt;/li&gt;
+  &lt;li&gt;Provide authentication for backend applications.&lt;/li&gt;
+  &lt;li&gt;Provide authorization for accessing URIs and dumb backend applications / sites.&lt;/li&gt;
+  &lt;li&gt;Be simple to understand and setup.&lt;/li&gt;
+  &lt;li&gt;Work with nginx but not require manually patching / building nginx or maintaining out-of-tree modules.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The &lt;a href=&quot;http://www.openfusion.com.au/labs/mod_auth_tkt/&quot;&gt;Apache &lt;code&gt;mod_auth_tkt&lt;/code&gt;&lt;/a&gt;
+comes pretty close in terms of functionality. The big difference is that it
+works as a native module only on Apache and uses shared secrets.
+&lt;a href=&quot;http://pubcookie.org/&quot;&gt;Pubcookie&lt;/a&gt; is another similar project. It also uses
+shared keys and is available as an Apache module. Plus its more complicated.&lt;/p&gt;
+
+&lt;p&gt;The project that is closest to nginx-sso is probably
+&lt;a href=&quot;https://neon1.net/mod_auth_pubtkt/&quot;&gt;mod_auth_pubtkt&lt;/a&gt;, which uses RSA/DSA. It
+includes a lot of similar features, but sadly is also limited to Apache. On the
+other hand, it is still actively developed, so if all you need is Apache, it
+might be your best choice.&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&quot;cookie-sso&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;cookie-based-sso-solutions&quot;&gt;Cookie-based SSO solutions&lt;/h1&gt;
+
+&lt;p&gt;When thinking about disconnected / offline SSO it is obvious that the user will
+provide his own credentials to the application server which has to decide
+whether it is legit. That means verifying the integrity and authenticity of the
+users claim, both of which are usually accomplished by using either &lt;em&gt;MACs&lt;/em&gt; or
+&lt;em&gt;signatures&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;For me, MACs were not an option since an attacker would be able to issue his
+own tickets by compromising a single application server. That leaves public-key
+signatures, based on DSA or ECC. ECC signatures are the better choice since
+they are more efficient and take up less space in a cookie.&lt;/p&gt;
+
+&lt;p&gt;nginx-sso uses a plain cookie with an additional ECSDA signature. The signature
+is made over the payload of the cookie (username, groups) as well as the expiry
+timestamp and the IP of the user.&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&quot;auth_request&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;authentication&quot;&gt;Authentication&lt;/h1&gt;
+
+&lt;p&gt;Authentication using vanilla nginx is possible mostly thanks to an awesome
+nginx-plugin called
+&lt;a href=&quot;http://nginx.org/en/docs/http/ngx_http_auth_request_module.html&quot;&gt;auth_request&lt;/a&gt;.
+From the website:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The ngx_http_auth_request_module module (1.5.4+) implements client
+authorization based on the result of a subrequest. If the subrequest returns
+a 2xx response code, the access is allowed. If it returns 401 or 403, the
+access is denied with the corresponding error code. Any other response code
+returned by the subrequest is considered an error.
+&lt;br /&gt;&lt;small&gt;&lt;b&gt;nginx auth_request documentation&lt;/b&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;With this module, every access to configured resources on your nginx server
+will trigger an HTTP request to an authentication backend. This request will
+contain the headers of the original request which your authentication backend
+uses to grant or deny access. The auth_request module is not compiled by
+default or in every distribution, but it is part of the mainline nginx codebase
+and major distributions have packages compiled with this module.&lt;/p&gt;
+
+&lt;p&gt;Here we can see the nginx configuration snippet which protects the resource
+&lt;code&gt;/secret&lt;/code&gt; with a subrequest to the internal resource &lt;code&gt;/auth&lt;/code&gt; which proxies to
+the &lt;strong&gt;ssoauth&lt;/strong&gt; server running on localhost.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-nginx&quot; data-lang=&quot;nginx&quot;&gt;  &lt;span class=&quot;k&quot;&gt;location&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/auth&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;kn&quot;&gt;internal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;kn&quot;&gt;proxy_pass&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;http://127.0.0.1:8082&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;kn&quot;&gt;proxy_pass_request_body&lt;/span&gt;     &lt;span class=&quot;no&quot;&gt;off&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;kn&quot;&gt;proxy_set_header&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Content-Length&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&amp;quot;&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;kn&quot;&gt;proxy_set_header&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;X-Original-URI&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$request_uri&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;kn&quot;&gt;proxy_set_header&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Host&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$http_host&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;kn&quot;&gt;proxy_set_header&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;X-Real-IP&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$remote_addr&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;location&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/secret&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;kn&quot;&gt;auth_request&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/auth&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;a name=&quot;variables-backend&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;passing-variables-to-the-application&quot;&gt;Passing variables to the application&lt;/h2&gt;
+
+&lt;p&gt;While I was able to do authentication and authorization in the auth backend, it
+still did not help my backend application in identifying the user. Fortunately,
+I discovered how to pass variables that are returned by the auth endpoint to the
+backend applications, see the example
+&lt;a href=&quot;https://github.com/heipei/nginx-sso/blob/master/etc/nginx.conf&quot;&gt;nginx.conf&lt;/a&gt;.
+Now the backend service can simply assume the presense and correctness of these
+HTTP headers and does not have to deal with the &lt;strong&gt;sso&lt;/strong&gt; cookie at all.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-nginx&quot; data-lang=&quot;nginx&quot;&gt;&lt;span class=&quot;k&quot;&gt;location&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/secret&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;kn&quot;&gt;auth_request&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/auth&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;kn&quot;&gt;auth_request_set&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$user&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$upstream_http_remote_user&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;kn&quot;&gt;proxy_set_header&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Remote-User&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$user&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;kn&quot;&gt;auth_request_set&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$groups&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$upstream_http_remote_groups&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;kn&quot;&gt;proxy_set_header&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Remote-Groups&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$groups&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;kn&quot;&gt;auth_request_set&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$expiry&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$upstream_http_remote_expiry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;kn&quot;&gt;proxy_set_header&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;Remote-Expiry&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$expiry&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+  &lt;span class=&quot;kn&quot;&gt;[...]&lt;/span&gt;
+  &lt;span class=&quot;s&quot;&gt;proxy_information_for_backend_application&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+  &lt;span class=&quot;kn&quot;&gt;[...]&lt;/span&gt;
+&lt;span class=&quot;err&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;a name=&quot;authorization&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;authorization&quot;&gt;Authorization&lt;/h1&gt;
+
+&lt;p&gt;As a nice side-effect, since we’re already making a subrequest for each HTTP
+request, we can also use the auth endpoint to do authorization. To do that,
+I’ve implemented a very rudimentary ACL in ssoauth. It has a list of vhosts and
+prefixes and for each of those contains a list of allowed users and groups.
+This way, even static resources can easily be protected.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-json&quot; data-lang=&quot;json&quot;&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;acl&amp;quot;&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;quot;auth.domain.dev:8080&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;quot;Users&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;jg123456&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;quot;Groups&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;x:&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;quot;UrlPrefixes&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;quot;/secret/&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;quot;Users&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;ba514378&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&amp;quot;jb759123&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;quot;Groups&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;y:engineering:cloud&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+      &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;&lt;a name=&quot;application&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;protecting-applications-with-nginx-sso&quot;&gt;Protecting applications with nginx-sso&lt;/h1&gt;
+
+&lt;p&gt;If you are writing a custom application and want to use this (or a similar)
+system, it really could not be easier. You can simply use the &lt;code&gt;Remote-User&lt;/code&gt; and
+&lt;code&gt;Remote-Groups&lt;/code&gt; headers to do authorization, for example by saying &lt;em&gt;Everyone in
+group xyz is an admin&lt;/em&gt;. Alternatively, you can have your own user-database and
+only use the &lt;code&gt;Remote-User&lt;/code&gt; header to create and later look up the correct user.
+This way you can have additional attributes (and permissions) for each user.&lt;/p&gt;
+
+&lt;p&gt;If you are using stock software you might be able to use this scheme as well. A
+lot of software comes with support for logging in via &lt;code&gt;Remote-User&lt;/code&gt;, even if
+the software then implements its own user-database on top of this. For
+closed-source software you can sometimes find plugins which enable this
+functionality.&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&quot;future&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;future-work&quot;&gt;Future work&lt;/h1&gt;
+
+&lt;p&gt;Development of nginx-sso is at the very beginning, both in terms of code
+quality and features. I have a lot of things still written down in my
+&lt;a href=&quot;https://github.com/heipei/nginx-sso/blob/master/TODO.md&quot;&gt;TODO&lt;/a&gt; file. I’d
+appreciate any help in making the codebase more readable and examining any
+potential weaknesses of the current system.&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&quot;references&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;references&quot;&gt;References&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/heipei/nginx-sso/&quot;&gt;https://github.com/heipei/nginx-sso/&lt;/a&gt; - The code on GitHub&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://neon1.net/mod_auth_pubtkt/&quot;&gt;https://neon1.net/mod_auth_pubtkt/&lt;/a&gt; - mod_auth_pubtkt, a project which almost works like nginx-sso&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://www.openfusion.com.au/labs/mod_auth_tkt/&quot;&gt;http://www.openfusion.com.au/labs/mod_auth_tkt/&lt;/a&gt; - Apache mod_auth_tkt&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://pubcookie.org/&quot;&gt;Pubcookie&lt;/a&gt; - Pubcookie system&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://developers.shopware.com/blog/2015/03/02/sso-with-nginx-authrequest-module/&quot;&gt;https://developers.shopware.com/blog/2015/03/02/sso-with-nginx-authrequest-module/&lt;/a&gt; - Describes a basic setup of using auth_request with cookies.&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://news.ycombinator.com/item?id=7641148&quot;&gt;https://news.ycombinator.com/item?id=7641148&lt;/a&gt; - Hackernews thread discussing auth_request and different approaches to SSO.&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://www.vanko.me/book/page/pubcookie-module-nginx&quot;&gt;http://www.vitki.net/book/page/pubcookie-module-nginx&lt;/a&gt; - A third-party Pubcookie implementation for nginx, out of date and not maintained.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;social&quot;&gt;Social&lt;/h1&gt;
+
+&lt;p&gt;
+&lt;a href=&quot;https://twitter.com/share&quot; class=&quot;twitter-share-button&quot; data-via=&quot;heipei&quot;&gt;Tweet&lt;/a&gt;&amp;nbsp;&amp;nbsp;
+&lt;a href=&quot;https://twitter.com/heipei&quot; class=&quot;twitter-follow-button&quot; data-show-count=&quot;false&quot;&gt;Follow @heipei&lt;/a&gt;
+&lt;script&gt;!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?&#39;http&#39;:&#39;https&#39;;if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+&#39;://platform.twitter.com/widgets.js&#39;;fjs.parentNode.insertBefore(js,fjs);}}(document, &#39;script&#39;, &#39;twitter-wjs&#39;);&lt;/script&gt;
+&lt;/p&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Persistent AppCache Injections</title>
+   <link href="https://heipei.github.io/2015/08/20/Persistent-AppCache-Injections/"/>
+   <updated>2015-08-20T00:00:00+02:00</updated>
+   <id>https://heipei.github.io/2015/08/20/Persistent-AppCache-Injections</id>
+   <content type="html">&lt;p&gt;&lt;strong&gt;tl;dr&lt;/strong&gt;: Make plain-HTTP MiTM attacks persistent by leveraging the HTML5
+AppCache offline functionality. Result: Persistent JavaScript running on the
+target browser whenever he visits previously injected websites, will not be
+cleared by reload. Can also be used as an intrusion-less persistent Strategic
+Web Compromise (SWC) to facilitate reconnaisance and exploitation of selected
+targets over time. The actual attack does &lt;em&gt;not&lt;/em&gt; rely on caching and is
+described in &lt;a href=&quot;#attack&quot;&gt;attack&lt;/a&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.reddit.com/r/netsec/comments/3h8bbj/html5_persistent_appcache_injections/&quot;&gt;r/netsec thread&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://news.ycombinator.com/item?id=10070009&quot;&gt;Hackernews thread&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;outline&quot;&gt;Outline&lt;/h1&gt;
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;#introduction&quot;&gt;Introduction&lt;/a&gt; - What made me research this attack&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#caching&quot;&gt;First thought: Caching&lt;/a&gt; - How would you do it via Caching&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#appcache&quot;&gt;Next idea: AppCache&lt;/a&gt; - Employing HTML5 AppCache&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#update&quot;&gt;AppCache manifest update behaviour&lt;/a&gt; - A closer look&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#attack&quot;&gt;The attack: &lt;strong&gt;Persistent AppCache Injection&lt;/strong&gt;&lt;/a&gt; - Steps to perform the actual attack&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#persistence&quot;&gt;Examining the persistence&lt;/a&gt; - How hard is it to get rid of the AppCache?&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#scenarios&quot;&gt;Attack scenarios&lt;/a&gt; - Where could this attack be employed?&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#countermeasures&quot;&gt;Countermeasures&lt;/a&gt; - What can you do to protect against this attack?&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#references&quot;&gt;References&lt;/a&gt; - URLs for further reading&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#updates&quot;&gt;Updates&lt;/a&gt; - What I found out after finishing this blog-post :(&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a name=&quot;introduction&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+
+&lt;p&gt;Earlier this month a colleague and I gave a talk at &lt;a href=&quot;https://www.blackhat.com/us-15/briefings.html#bringing-a-cannon-to-a-knife-fight&quot;&gt;BlackHat USA about the
+Great Cannon of
+China&lt;/a&gt;.
+If you don’t know what the Great Cannon is capable of, I suggest reading the
+&lt;a href=&quot;https://citizenlab.org/2015/04/chinas-great-cannon/&quot;&gt;excellent technical analysis by the Citizen
+Lab&lt;/a&gt;. The bottom-line is
+that the Great Cannon is a nation-level Man-in-the-Middle tool that the Chinese
+administration can employ against plain connections going to/from China. With
+that tool in hand, they were able to replace ad-related JavaScript hosted on
+baidu.com with a malicious piece of JavaScript that would do an XHR request to
+GreatFire.org as well as Github.com, thereby creating a browser-based DDoS
+attack that international visitors of Baidu participated in.&lt;/p&gt;
+
+&lt;p&gt;While doing my research over the last months, I tried to come up with
+worst-case scenarios and payloads that could be employed against plain HTTP
+connections this way. Right from the start it had been evident that the Great
+Cannon could also be used to target individual users and organizations. The
+selectors for this targeting could be plain IP addresses or other user traits
+submitted via plain HTTP. HTTP injection is noisy however, especially since it
+has to be performed constantly against a user. For the Great Cannon this might
+be possible, but for an attacker trying to MiTM your HTTP connection, this is
+frequently not the case.&lt;/p&gt;
+
+&lt;p&gt;I realized that the scariest way to achieve this goal is by somehow
+&lt;em&gt;persisting&lt;/em&gt; in the target browser after the injections have stopped. This way
+you could track users over extended periods of time, either as part of a
+botnet, to collect information, or to wait for the day that their browser or
+plugins are vulnerable to a remote-code-execution bug for a short period of
+time.&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&quot;caching&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;first-thought-caching&quot;&gt;First thought: Caching&lt;/h1&gt;
+
+&lt;p&gt;When thinking of persistence and HTTP, browser caching is the first thing that
+comes to mind. You could supply injected content along with custom caching
+headers which have a long cache duration. This will actually work reasonably
+well, but suffers from a couple of drawbacks:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;If you inject single JS files, there is no telling whether the URL for these
+changes (e.g. asset management URLs).&lt;/li&gt;
+  &lt;li&gt;If you inject some HTML resource, the user might notice that the website on
+his system seems out of date and force a refresh.&lt;/li&gt;
+  &lt;li&gt;In any case, as soon as the website starts behaving erratically, users are
+likely to manually refresh the websites, thereby clearing the caches and your
+precious payload.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The caching behaviour of different browsers is a complicated topic that I’m not
+gonna get into here. Suffice to say, major browsers nowadays offer easy ways of
+clearing the cache or hard-reloading a page.&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&quot;appcache&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;next-idea-appcache&quot;&gt;Next idea: AppCache&lt;/h1&gt;
+
+&lt;p&gt;My next idea was to go with the HTML5 Application Cache, aka the “offline
+website” functionality. You might have seen that in action when you used Google
+Docs and went offline: The web application is still available and fully
+usable.&lt;/p&gt;
+
+&lt;p&gt;The way that the AppCache works is by specifying a manifest file in the HTML
+header that tells the browser to download all of the files in the manifest and
+use them whenever the browser is determined to be offline. You can then make a
+website appear to be offline by DoSing either or cookie-bombing the user so the
+website appears to be offline. Both approaches make the actual website
+unreachable, which we want to avoid for obvious reasons.&lt;/p&gt;
+
+&lt;p&gt;Interestingly, the files in the AppCache are used even when the browser is
+online. In this case, the only thing the browser does is to check whether the
+manifest file changed. If it hasn’t it will happily keep using the offline
+files.&lt;/p&gt;
+
+&lt;p&gt;The obvious approach would be to inject a forged HTML, manifest and
+corresponding cache headers. Apparently, the cache headers are also applied to
+the manifest file. This is exactly what &lt;a href=&quot;http://sakurity.com/blog/2015/08/13/middlekit.html&quot;&gt;Egor
+Homakov&lt;/a&gt; did in his post on
+the Application Cache. But this approach suffers from the same drawbacks that
+pure cache-based attacks to: It can easily be circumvented by clearing the
+cache or hitting hard-refresh. For Safari, this will not work at all, since it
+will always check the manifest even if it had a long cache expiry time.&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&quot;update&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;appcache-manifest-update-behaviour&quot;&gt;AppCache manifest update behaviour&lt;/h1&gt;
+
+&lt;p&gt;I started looking at the &lt;a href=&quot;http://www.w3.org/html/wg/drafts/html/master/browsers.html#offline&quot;&gt;HTML5
+spec&lt;/a&gt; and
+playing around with the Application cache. When you reload a page, the browser
+will try to get the manifest to see if it changed. If the manifest file is gone
+(HTTP 404 or 410), then the whole Application Cache will be cleared. This would
+defeat our one-time injection.&lt;/p&gt;
+
+&lt;p&gt;What caught my eye was this piece section:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Otherwise, if fetching the manifest fails in some other way (e.g. the server
+returns another 4xx or 5xx response or equivalent, or there is a DNS error,
+or the connection times out, or the user cancels the download, or the parser
+for manifests fails when checking the magic signature), or if the server
+returned a redirect, or if the resource is labeled with a MIME type other
+than text/cache-manifest, then run the cache failure steps.
+&lt;br /&gt;&lt;small&gt;&lt;b&gt;&lt;a href=&quot;http://www.w3.org/html/wg/drafts/html/master/browsers.html#downloading-or-updating-an-application-cache&quot;&gt;W3C HTML5 spec&lt;/a&gt;&lt;/b&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;The cache failure steps finish with this step: &lt;em&gt;“Abort the application cache
+download process.”&lt;/em&gt; To spell it out: The Application cache will stay intact if
+some part of updating it fails this way. The reasoning behind this is that the
+user might be behind some sort of captive portal (hence the 302), which
+effectively means “offline”. The same logic is true for return codes like
+500 (“The server might be down”) or 200.&lt;/p&gt;
+
+&lt;p&gt;I only noticed the &lt;em&gt;“Security Concerns”&lt;/em&gt; section in the draft spec after I had
+already come up with my attack.  It addresses a very similar attack, but still
+does not quite apply to what we have in mind.&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;[…] an injection attack can be elevated into persistent site-wide page
+replacement. […] Targetted denial-of-service attacks or cookie bombing
+attacks can be used to ensure that the site appears offline. […] If a site
+has been attacked in this way, simply removing the offending manifest might
+eventually clear the problem, since the next time the manifest is updated, a
+404 error will be seen, and the user agent will clear the cache. […]
+Unfortunately, if a cookie bombing attack has also been used, merely removing
+the manifest is insufficient; in addition, the server has to be configured to
+return a 404 or 410 response instead of the 413 “Request Entity Too Large”
+response.
+&lt;br /&gt;&lt;small&gt;&lt;b&gt;&lt;a href=&quot;http://www.w3.org/html/wg/drafts/html/master/browsers.html#downloading-or-updating-an-application-cache&quot;&gt;W3C HTML5 spec&lt;/a&gt;&lt;/b&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;a name=&quot;attack&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;putting-everything-together-persistent-appcache-injection&quot;&gt;Putting everything together: Persistent AppCache Injection&lt;/h1&gt;
+
+&lt;p&gt;Now for the actual attack. Let’s take a step back and see what we’ve got:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;We can’t upload our own manifest to the server.&lt;/li&gt;
+  &lt;li&gt;We can’t inject a response for every request to the manifest.&lt;/li&gt;
+  &lt;li&gt;We can’t / won’t DDoS or cookie-bomb the server.&lt;/li&gt;
+  &lt;li&gt;The manifest has to live in the same origin as the website.&lt;/li&gt;
+  &lt;li&gt;The AppCache &lt;strong&gt;will&lt;/strong&gt; be deleted if the request for the manifest returns 404 or 410.&lt;/li&gt;
+  &lt;li&gt;The AppCache &lt;strong&gt;will not&lt;/strong&gt; be deleted if the manifest returns some other error code or redirect.&lt;/li&gt;
+  &lt;li&gt;The AppCache &lt;strong&gt;will not&lt;/strong&gt; be deleted if the manifest returns 200 but with the wrong MIME type.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;No&lt;/strong&gt; current browser will prompt or show any indication when creating an AppCache.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;In order to achieve our intended persistence, we need to inject the manifest on
+a path that will generate a non-404/410 response from the &lt;strong&gt;legitimate&lt;/strong&gt;
+web-server! The path can be any sub-path, just make sure to deliver your fake
+manifest file with MIME-type &lt;code&gt;text/cache-manifest&lt;/code&gt;.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Inject resource you want to persist (e.g. /index.html or just /).&lt;/li&gt;
+  &lt;li&gt;In injected resource, point to your own to-be-injected manifest via &lt;code&gt;&amp;lt;html manifest=&quot;/foo/bar/&quot;&amp;gt;&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;Make sure that the URL for fake manifest always returns non-404/410 from the legitimate website.&lt;/li&gt;
+  &lt;li&gt;Additionally, place JavaScript payload in the injected resource (stealthier).&lt;/li&gt;
+  &lt;li&gt;The manifest should include the resource, itself, and whatever else you need.&lt;/li&gt;
+  &lt;li&gt;Do the injection once.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The injected HTML at /:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;html&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;manifest=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&amp;quot;/foo/bar/&amp;quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;head&amp;gt;&amp;lt;title&amp;gt;&lt;/span&gt;Malicious Website&lt;span class=&quot;nt&quot;&gt;&amp;lt;/title&amp;gt;&amp;lt;/head&amp;gt;&lt;/span&gt;
+    [...]&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The injected manifest file at &lt;code&gt;/foo/bar/&lt;/code&gt;:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;CACHE MANIFEST
+
+CACHE:
+/
+/foo/bar/&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Picking a non-404/410 URL might sound complicated, but it’s actually fairly
+simple: Pick any 302 or even 200 URL (as long as it does not reply with
+MIME-type &lt;code&gt;text/cache-manifest&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&quot;persistence&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;examining-the-persistence&quot;&gt;Examining the persistence&lt;/h1&gt;
+
+&lt;p&gt;This is where things get tricky. The question we want to answer is how
+persistent our injection really is. Remember that the AppCache functionality is
+supposed to work offline, so clearing the AppCache when the user hits
+&lt;em&gt;“Reload”&lt;/em&gt; would defeat its purpose. Let’s have a look at each major browser:&lt;/p&gt;
+
+&lt;h2 id=&quot;google-chrome-44-stable-linux--mac-os-x&quot;&gt;Google Chrome 44 (Stable) (Linux &amp;amp; Mac OS X)&lt;/h2&gt;
+
+&lt;p&gt;Google Chrome will &lt;strong&gt;not&lt;/strong&gt; clear the AppCache or reload the original HTML when
+doing a refresh or hard-refresh (Ctrl-Shift-R). It &lt;strong&gt;will&lt;/strong&gt; reload the original
+file when opening the Inspector and selecting &lt;code&gt;[x] Disable Cache&lt;/code&gt;. Also, you
+can examine and clear AppCaches in chrome via the internal URL
+&lt;code&gt;chrome://appcache-internals/&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;mozilla-firefox-3811-esr-linux--mac-os-x&quot;&gt;Mozilla Firefox 38.1.1 (ESR) (Linux &amp;amp; Mac OS X)&lt;/h2&gt;
+
+&lt;p&gt;Firefox will &lt;strong&gt;not&lt;/strong&gt; clear the AppCache when doing a refresh or hard-refresh.
+The only way to clear the AppCache is to go to &lt;em&gt;Preferences&lt;/em&gt; -&amp;gt; &lt;em&gt;Advanced&lt;/em&gt;
+-&amp;gt; &lt;em&gt;Network&lt;/em&gt; and clear the AppCache manually.&lt;/p&gt;
+
+&lt;h2 id=&quot;safari-807-mac-os-x&quot;&gt;Safari 8.0.7 (Mac OS X)&lt;/h2&gt;
+
+&lt;p&gt;Safari will &lt;strong&gt;not&lt;/strong&gt; clear the AppCache on refresh or hard-refresh. On top of
+that, Safari will also &lt;strong&gt;not&lt;/strong&gt; clear the AppCache even if you do &lt;em&gt;Develop&lt;/em&gt; -&amp;gt;
+&lt;em&gt;Empty Caches&lt;/em&gt; and &lt;em&gt;Develop&lt;/em&gt; -&amp;gt; &lt;em&gt;Disable Caches&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Safari does not expose the AppCaches in a very visible fashion. The only way
+I’ve found to clear an AppCache is by going to &lt;em&gt;Preferences&lt;/em&gt; -&amp;gt; &lt;em&gt;Privacy&lt;/em&gt; -&amp;gt;
+&lt;em&gt;Remove All Website Data&lt;/em&gt; (or search for websites).&lt;/p&gt;
+
+&lt;h2 id=&quot;opera-310-mac-os-x&quot;&gt;Opera 31.0 (Mac OS X)&lt;/h2&gt;
+
+&lt;p&gt;Opera will &lt;strong&gt;not&lt;/strong&gt; clear the AppCache on refresh or hard-refresh (Shift+Refresh).
+Opera will clear the AppCache when hitting &lt;em&gt;Clear Browsing Data&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;internet-explorer-11-windows-7&quot;&gt;Internet Explorer 11 (Windows 7)&lt;/h2&gt;
+
+&lt;p&gt;Internet Explorer will &lt;strong&gt;not&lt;/strong&gt; clear the AppCache on refresh or hard-refresh
+(Shift-Click). To clear it, you’ll have to go to &lt;em&gt;Internet Options&lt;/em&gt; -&amp;gt;
+&lt;em&gt;Settings&lt;/em&gt; -&amp;gt; &lt;em&gt;Caches and databases&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;comparison-to-homakov&quot;&gt;Comparison to Homakov&lt;/h2&gt;
+&lt;p&gt;Comparing the method to the Cache-Only attack of Homakov:&lt;/p&gt;
+
+&lt;p&gt;Our method:&lt;/p&gt;
+
+&lt;table class=&quot;table table-borders&quot;&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Method&lt;/th&gt;
+      &lt;th&gt;Chrome&lt;/th&gt;
+      &lt;th&gt;Firefox&lt;/th&gt;
+      &lt;th&gt;Safari&lt;/th&gt;
+      &lt;th&gt;Opera&lt;/th&gt;
+      &lt;th&gt;IE&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Reload / Browse&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Hard-Reload&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Cache disable&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+      &lt;td&gt;NA&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;NA&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Preferences&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;Homakov:&lt;/p&gt;
+
+&lt;table class=&quot;table table-borders&quot;&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Method&lt;/th&gt;
+      &lt;th&gt;Chrome&lt;/th&gt;
+      &lt;th&gt;Firefox&lt;/th&gt;
+      &lt;th&gt;Safari&lt;/th&gt;
+      &lt;th&gt;Opera&lt;/th&gt;
+      &lt;th&gt;IE&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Reload / Browse&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist once&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Hard-Reload&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+      &lt;td&gt;Persist&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Cache disable&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+      &lt;td&gt;NA&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+      &lt;td&gt;NA&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;Preferences&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+      &lt;td&gt;Clear&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;As I said, browser caching is a complex topic. Suffice to say, employing only
+caching is not sufficient since the browser might clear the cache without a lot
+of user interaction. For example, Safari will clear the cache if you hit the
+regular “Reload” twice in a row.&lt;/p&gt;
+
+&lt;!-- TODO: Table to compare against Homakov&#39;s attack --&gt;
+
+&lt;p&gt;&lt;a name=&quot;scenarios&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;attack-scenarios&quot;&gt;Attack scenarios&lt;/h1&gt;
+
+&lt;p&gt;There are a number of different scenarios where this attack can be used, ranging from stealthy to obvious.&lt;/p&gt;
+
+&lt;p&gt;The Great Cannon (or any large in-path system) could be leveraged to do these
+kind of injections. This would have to be very targeted, as any large-scale
+injection will immediately be noticed. Additionally, if someone already
+controls a system such as the Great Cannon, he would not really have to do
+these kind of injections to stay “persistent”.&lt;/p&gt;
+
+&lt;p&gt;Another scenario is much more dangerous: &lt;strong&gt;Local injections&lt;/strong&gt;. If you’re going to a
+conference or browsing over a public hotel Wi-Fi, someone could MiTM you and
+thereby persist in your browser whenever you visit your favorite website.
+Personally, I browse a number of plain-only news websites which would be ripe
+targets as I go there daily and usually stay for a while to catch up on news.&lt;/p&gt;
+
+&lt;p&gt;An even more devious kind of injection would work against &lt;strong&gt;internal websites&lt;/strong&gt;
+that the target might visit. This could be your average Intranet page which IT
+never protected with HTTPS since &lt;em&gt;“it’s only reachable on the corporate
+network”&lt;/em&gt; anyway. Usually, the target would not visit these websites in a
+remote location, but he might have had an open tab or simply didn’t notice that
+the VPN connection had died again. In any case, you can now inject his
+&lt;strong&gt;internal&lt;/strong&gt; website and grab whatever data you want the next time he goes
+online in his corporate network/VPN environment. Scary? It should be!&lt;/p&gt;
+
+&lt;p&gt;Both of these attacks could also be carried out without actually &lt;em&gt;injecting&lt;/em&gt;
+the HTTP response. You could simply send a forged DNS reply to redirect the
+target to your AppCache-injection site once.&lt;/p&gt;
+
+&lt;p&gt;Lastly, as I mentioned, this kind of persistence would be ideal for actors
+without nation-state capabilities to pull of targeted exploitation. Without
+access to a treasure trove of 0days, you’d have to be lucky to catch your
+target in the narrow time-frame that he is exploitable. With a persistent
+injection, you could simply wait until there is yet another Flash/Java RCE 0day
+and exploit the user in this very instant.&lt;/p&gt;
+
+&lt;p&gt;Not really an injection, but this attack could just as well be mounted by an
+attacker who compromises the legitimate webserver and wants to persist even
+after his attack payload is cleaned from the server. In this case, the benign
+website could at least detect the injection and make sure it returns 404 for
+the fake manifest URL.&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&quot;countermeasures&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;countermeasures&quot;&gt;Countermeasures&lt;/h1&gt;
+
+&lt;p&gt;To prevent this attack from taking place in the first place, one should employ
+&lt;strong&gt;HTTPS along with HSTS whenever possible&lt;/strong&gt;. HTTPS is &lt;strong&gt;not enough&lt;/strong&gt; if users
+go to the plain HTTP URL: Deploy HSTS! There is a &lt;a href=&quot;https://letsencrypt.org/&quot;&gt;free CA launching this
+year&lt;/a&gt;, and the steps to actually get a proper HTTPS
+setup working have never been easier. If you’re in a corporate environment, you
+could set up your own CA and install its cert with your users. Make sure you
+understand the security-implications of this though! Custom CAs will not
+trigger key-pinning violations!&lt;/p&gt;
+
+&lt;p&gt;A mitigation if your website was attacked via an inject would be to change the
+requested paths for the faux manifest file to return 404 instead of some other
+return code.&lt;/p&gt;
+
+&lt;p&gt;Other things that could be done by Browser vendors would be to make the
+AppCache more visible to the user, via a dedicated icon in the address-bar that
+shows that the offline version of a page is in effect. Another feature or
+extension could be created which only allows AppCache to be set by HTTPS sites,
+which would get rid of the injection attack.&lt;/p&gt;
+
+&lt;p&gt;&lt;a name=&quot;references&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;references&quot;&gt;References&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;http://blog.andlabs.org/2010/06/chrome-and-safari-users-open-to-stealth.html&quot;&gt;Attack &amp;amp; Defense Labs: HTML5 AppCache attack&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.hackinparis.com/slides/hip2k12/Krzysztof-html5-somethingwickedthiswaycomes.pdf&quot;&gt;HTML5 attacks by Krzysztof Kotowicz&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://en.wikipedia.org/wiki/Wikipedia:Bypass_your_cache#Bypassing_cache&quot;&gt;Wikipedia: Bypass your cache&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://sakurity.com/blog/2015/08/13/middlekit.html&quot;&gt;Egor Homakov: Using AppCache and ServiceWorker for Evil&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://www.w3.org/TR/2011/WD-html5-20110525/offline.html&quot;&gt;W3C HTML5 spec on Offline Web Applications&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://appcache.offline.technology/&quot;&gt;Appcache Facts&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;a name=&quot;updates&quot; class=&quot;anchor&quot;&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;updates&quot;&gt;Updates&lt;/h1&gt;
+
+&lt;p&gt;I had previously searched for existing documentation of this attack vector but
+could not find any mention of it. It was only &lt;em&gt;after&lt;/em&gt; I had finished my
+research and this blog post that I came upon the &lt;a href=&quot;http://blog.andlabs.org/2010/06/chrome-and-safari-users-open-to-stealth.html&quot;&gt;blog-post by Attack&amp;amp;Defense
+Labs&lt;/a&gt;
+which describes the exact same attack :( It was then rehashed in &lt;a href=&quot;https://www.hackinparis.com/slides/hip2k12/Krzysztof-html5-somethingwickedthiswaycomes.pdf&quot;&gt;this
+presentation by Krzysztof
+Kotowicz&lt;/a&gt;.
+I guess I only searched for “injection” rather than “poisoning”. Nevertheless,
+I still published this post as it should serve as a useful refresher and
+reminder and also examines different browsers and attack vectors.&lt;/p&gt;
+
+&lt;p&gt;As I’m not a cutting-edge kind of WebDev, I was not aware that AppCache will
+actually be replaced by
+&lt;a href=&quot;http://www.w3.org/TR/service-workers/&quot;&gt;ServiceWorkers&lt;/a&gt;. In the future, browser
+vendors might drop AppCache support, at which point it will be removed from the
+spec as well. Older browser will still support it though, and there is no
+timeline yet for when it will be removed.&lt;/p&gt;
+
+&lt;h1 id=&quot;social&quot;&gt;Social&lt;/h1&gt;
+
+&lt;p&gt;
+&lt;a href=&quot;https://twitter.com/share&quot; class=&quot;twitter-share-button&quot; data-via=&quot;heipei&quot;&gt;Tweet&lt;/a&gt;&amp;nbsp;&amp;nbsp;
+&lt;a href=&quot;https://twitter.com/heipei&quot; class=&quot;twitter-follow-button&quot; data-show-count=&quot;false&quot;&gt;Follow @heipei&lt;/a&gt;
+&lt;script&gt;!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?&#39;http&#39;:&#39;https&#39;;if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+&#39;://platform.twitter.com/widgets.js&#39;;fjs.parentNode.insertBefore(js,fjs);}}(document, &#39;script&#39;, &#39;twitter-wjs&#39;);&lt;/script&gt;
+&lt;/p&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>OpenSSH - Secure Networking Swiss-Army Knife</title>
+   <link href="https://heipei.github.io/2015/04/29/OpenSSH-Secure-Networking-Swiss-Army-Knife/"/>
+   <updated>2015-04-29T00:00:00+02:00</updated>
+   <id>https://heipei.github.io/2015/04/29/OpenSSH-Secure-Networking-Swiss-Army-Knife</id>
+   <content type="html">&lt;p&gt;&lt;strong&gt;tl;dr&lt;/strong&gt;: Well-known yet underused OpenSSH features and their applications in
+building secure systems.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.reddit.com/r/netsec/comments/34az9p/openssh_secure_networking_swissarmy_knife/&quot;&gt;r/netsec thread&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://news.ycombinator.com/item?id=9460608&quot;&gt;Hackernews thread&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+
+&lt;p&gt;My &lt;a href=&quot;/2015/02/26/SSH-Agent-Forwarding-considered-harmful/&quot;&gt;last post on this
+blog&lt;/a&gt; was about the
+dangers of using SSH Agent Forwarding. In that post I recommended using OpenSSH
+&lt;code&gt;ProxyCommand&lt;/code&gt; as not only a workaround but actually a superior way of hopping
+between hosts. This feature is clearly documented and intended to be used as
+such, still a lot of the discussions which ensued on Reddit and Netsec showed me
+that there are quite a number of users who were previously unaware of these
+features. That’s what prompted me to do a follow-up on some additional
+“tricks”, even if it’s just the application of something clearly documented in
+the manpages. But then, not everybody reads the manpages.&lt;/p&gt;
+
+&lt;p&gt;This post will cover some of these features and also provide some references
+for further reading. I’ll start by introducing the basic features and then
+presenting some ways to use them. The biggest takeaway is this:&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;OpenSSH is a lot more than a tool to securely to connect to your VPS. Think
+of it as a simple, well-understood building-block for constructing secure
+distributed systems, for both automated and interactive applications. With
+the right workflow, employing OpenSSH will come to you very naturally and
+comfortably.
+&lt;br /&gt;&lt;small&gt;&lt;b&gt;Me, April 2015&lt;/b&gt;&lt;/small&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&quot;securing-openssh&quot;&gt;Securing OpenSSH&lt;/h1&gt;
+
+&lt;p&gt;We start of by applying reasonable security settings to our OpenSSH workflow.
+In the recent months there were enough posts written on this topic, so I’ll
+just reference them here. It boils down to this:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Protecting your private key with a passphrase.&lt;/li&gt;
+  &lt;li&gt;Disabling logins via password.&lt;/li&gt;
+  &lt;li&gt;Explicitly disallowing all but the most secure Ciphers, MACs and Key Exchange algorithms.&lt;/li&gt;
+  &lt;li&gt;Monitoring and preventing brute force connections.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The most current and comprehensive post on this topic has been written by
+&lt;a href=&quot;https://twitter.com/stribika&quot;&gt;@stribika&lt;/a&gt; in his blog-post &lt;a href=&quot;https://stribika.github.io/2015/01/04/secure-secure-shell.html&quot;&gt;Secure Secure
+Shell&lt;/a&gt;. His
+observations are spot-on, including the section on “System hardening”: &lt;i&gt;Keep
+a clean system&lt;/i&gt;.&lt;/p&gt;
+
+&lt;p&gt;What I like to do on top of this is to employ some way of monitoring the SSH
+logs and rate-limiting connection attempts in a very crude way. Monitoring SSH
+connection attempts can be done by logging TCP connections to your SSH ports
+and then ingesting these logs into something like Logstash and Kibana. To
+rate-limit connection attempts I use a very simple iptables ruleset because I
+don’t trust systems like fail2ban enough.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Move your SSH to a high port instead of running it on tcp/22. This will
+eliminate practically any noise in the TCP logs: &lt;code&gt;Port 12345&lt;/code&gt; in &lt;code&gt;sshd_config&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Setup rate-limiting to your SSH listening port just in case:&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;iptables -A INPUT -p tcp --dport &lt;span class=&quot;m&quot;&gt;12345&lt;/span&gt; -m conntrack --ctstate NEW -m recent --set
+iptables -A INPUT -p tcp --dport &lt;span class=&quot;m&quot;&gt;12345&lt;/span&gt; -m conntrack --ctstate NEW -m recent &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+	--update --seconds &lt;span class=&quot;m&quot;&gt;120&lt;/span&gt; --hitcount &lt;span class=&quot;m&quot;&gt;3&lt;/span&gt; -j DROP
+iptables -A INPUT -p tcp --dport &lt;span class=&quot;m&quot;&gt;12345&lt;/span&gt; -j ACCEPT&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;On a multi-user system it might be reasonable to disallow some features
+globally, such as agent forwarding, port forwarding and dynamic port
+forwarding.&lt;/li&gt;
+  &lt;li&gt;If you’re adventurous you can also employ &lt;a href=&quot;https://www.digitalocean.com/community/tutorials/how-to-configure-port-knocking-using-only-iptables-on-an-ubuntu-vps&quot;&gt;port-knocking using nothing but
+iptables&lt;/a&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;sshconfig&quot;&gt;~/.ssh/config&lt;/h1&gt;
+&lt;p&gt;Next we turn our attention to your &lt;code&gt;~/.ssh/config&lt;/code&gt; file. This file can be used
+to configure per-host parameters, most commonly a combination of a custom port
+and username.&lt;/p&gt;
+
+&lt;p&gt;You should consider &lt;code&gt;~/.ssh/config&lt;/code&gt; your authoritative and only sources about
+your hosts. Whenever you get access to a new host just add it to this file and
+don’t worry about remembering it. The &lt;code&gt;Host&lt;/code&gt; line can be used to create aliases
+which are easy to remember (e.g. &lt;code&gt;ams-vps&lt;/code&gt; instead of a raw IP).&lt;/p&gt;
+
+&lt;p&gt;Let’s examine a contrived example to show the options I find myself most frequently using:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-apache&quot; data-lang=&quot;apache&quot;&gt;&lt;span class=&quot;lineno&quot;&gt; 1&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;ServerAliveInterval&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 2&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;TCPKeepAlive&lt;/span&gt; no
+&lt;span class=&quot;lineno&quot;&gt; 3&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt; 4&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Host&lt;/span&gt; ams-vps
+&lt;span class=&quot;lineno&quot;&gt; 5&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;Hostname&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;123.123.123.123&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 6&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;Port&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;12345&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt; 7&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;User&lt;/span&gt; root
+&lt;span class=&quot;lineno&quot;&gt; 8&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;IdentityFile&lt;/span&gt; ~/.ssh/vps_key
+&lt;span class=&quot;lineno&quot;&gt; 9&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;IdentitiesOnly&lt;/span&gt; yes
+&lt;span class=&quot;lineno&quot;&gt;10&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;LocalForward&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;8080&lt;/span&gt; localhost:80
+&lt;span class=&quot;lineno&quot;&gt;11&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;DynamicForward&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;9090&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Let’s go through these lines one by one, ignoring the “Alive” lines.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;The &lt;code&gt;Host&lt;/code&gt; alias is &lt;code&gt;ams-vps&lt;/code&gt; so I can remember it easily.&lt;/li&gt;
+  &lt;li&gt;The &lt;code&gt;Hostname&lt;/code&gt; is the actual IP or hostname of the host.&lt;/li&gt;
+  &lt;li&gt;It uses a non-standard &lt;code&gt;Port&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;I have to login with a different user than on my local machine.&lt;/li&gt;
+  &lt;li&gt;I have a separate keypair for this host in &lt;code&gt;vps_key&lt;/code&gt; and I only want to use that one.&lt;/li&gt;
+  &lt;li&gt;I want to be able to access &lt;code&gt;tcp/80&lt;/code&gt; on the remote host via &lt;code&gt;localhost:8080&lt;/code&gt;.
+    &lt;ul&gt;
+      &lt;li&gt;This is great if you want to access some piece of remote software which you
+ would not want to expose on the Internet. Like a plain HTTP server, or a
+ VNC-server if you’re running virtual machines on the remote host.&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;I want a SOCKS proxy server listening locally on &lt;code&gt;tcp/9090&lt;/code&gt; terminated with the remote host.
+    &lt;ul&gt;
+      &lt;li&gt;Using a SOCKS proxy I can easily tunnel a lot of traffic through this
+machine, for example to circumvent geo-IP restrictions. I could use my
+browser to use this proxy and then browse via the remote host. With Chrome,
+this works best by using a separate profile, so you can keep your regular
+profile running without the proxy.&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-nginx&quot; data-lang=&quot;nginx&quot;&gt;   &lt;span class=&quot;k&quot;&gt;google-chrome-stable&lt;/span&gt;
+   &lt;span class=&quot;s&quot;&gt;--user-data-dir=&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$HOME/.config/google-chrome-socks&lt;/span&gt;
+   &lt;span class=&quot;s&quot;&gt;--proxy-server=socks://localhost:9090&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;My &lt;code&gt;~/.ssh/config&lt;/code&gt; is currently ~250 lines long, just to give you an idea. The
+newest versions of OpenSSH even allow include statements in this file.&lt;/p&gt;
+
+&lt;h1 id=&quot;controlmaster&quot;&gt;ControlMaster&lt;/h1&gt;
+&lt;p&gt;OpenSSH &lt;code&gt;ControlMaster&lt;/code&gt; is one of the options that I use globally in my &lt;code&gt;~/.ssh/config&lt;/code&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-apache&quot; data-lang=&quot;apache&quot;&gt;&lt;span class=&quot;nb&quot;&gt;ControlMaster&lt;/span&gt; auto		# Auto == Create and use as needed
+&lt;span class=&quot;nb&quot;&gt;ControlPath&lt;/span&gt; &lt;span class=&quot;sx&quot;&gt;/tmp/&lt;/span&gt;%r@%h:%p	# The sockets are stored here
+&lt;span class=&quot;nb&quot;&gt;ControlPersist&lt;/span&gt; yes		# Optional&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;What &lt;code&gt;ControlMaster&lt;/code&gt; does is create (and subsequently use) a control socket
+for each connection to a remote server. SSH supports multiple independent
+“channels” which can be multiplexed over a single existing SSH connection. On
+the first connection to a host, OpenSSH will create a control socket in &lt;code&gt;/tmp&lt;/code&gt;.
+With each subsequent connection, if a ControlMaster exists for a given
+user/host/port, OpenSSH will use it to create a new channel (pty or scp) within
+the existing SSH connection without going through the SSH handshake and shared
+secret agreement. The socket will be destroyed when the last SSH session
+disconnects.&lt;/p&gt;
+
+&lt;p&gt;The biggest reason for me to use &lt;code&gt;ControlMaster&lt;/code&gt; is &lt;em&gt;performance&lt;/em&gt;. The SSH
+handshake does take a while, even more so with increasing latency. While this
+might not be an issue for the occasional login, it is really annoying or
+downright prohibitive when trying to connect more frequently. The prime example
+here is remote scp-completion, something that zsh is capable of doing out of
+the box. Unless you’re on your local network, scp-completion just plain sucks
+without &lt;code&gt;ControlMaster&lt;/code&gt;. The problem is even amplified when considering
+scenarios with more than one hop (&lt;code&gt;ProxyCommand&lt;/code&gt;). In this case, each full SSH
+session establishment can take several seconds.&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;ControlPersist&lt;/code&gt; keyword is optional. I don’t use it because I like to keep
+track of the open session, but software like Ansible employs it to have the
+control socket linger for a while after the last/initial SSH connection is
+closed.&lt;/p&gt;
+
+&lt;h1 id=&quot;proxycommand&quot;&gt;ProxyCommand&lt;/h1&gt;
+
+&lt;p&gt;I’m not going to talk about &lt;code&gt;ProxyCommand&lt;/code&gt; at length since I mentioned its
+benefits in my &lt;a href=&quot;/2015/02/26/SSH-Agent-Forwarding-considered-harmful/&quot;&gt;last
+post&lt;/a&gt;. As a quick recap:
+&lt;code&gt;ProxyCommand&lt;/code&gt; allows your system to connect to an otherwise inaccessible system
+via one or multiple intermediate “hops”. It has undeniable advantages in terms
+of usability and security over using something like SSH agent forwarding. The
+number of ways you could get pwned when not using &lt;code&gt;ProxyCommand&lt;/code&gt; is not
+something to be dismissed lightly.&lt;/p&gt;
+
+&lt;p&gt;Suffice to say, none of the features I mentioned in this post (&lt;code&gt;LocalForward&lt;/code&gt;,
+&lt;code&gt;DynamicForward&lt;/code&gt;, &lt;code&gt;ControlMaster&lt;/code&gt;) work if you use agent forwarding or manual
+hopping as opposed to using &lt;code&gt;ProxyCommand&lt;/code&gt;. One more reason to reconsider.&lt;/p&gt;
+
+&lt;h1 id=&quot;sshauthorizedkeys&quot;&gt;~/.ssh/authorized_keys&lt;/h1&gt;
+
+&lt;p&gt;The &lt;code&gt;authorized_keys&lt;/code&gt; file specifies which public key is allowed to login to
+the current account. You’ve probably used it when adding your own public key on
+a remote server. The basic format of this is very simple: It takes one SSH
+public key per line to allow login via that key.&lt;/p&gt;
+
+&lt;p&gt;Some people might not know that you can actually add a number of options per
+key. The complete description is in &lt;code&gt;man sshd&lt;/code&gt;, I’ll only cover the options I
+frequently use.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-vim&quot; data-lang=&quot;vim&quot;&gt;command&lt;span class=&quot;p&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;date&amp;quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;no&lt;span class=&quot;p&quot;&gt;-&lt;/span&gt;agent&lt;span class=&quot;p&quot;&gt;-&lt;/span&gt;forwarding&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;no&lt;span class=&quot;p&quot;&gt;-&lt;/span&gt;pty&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;no&lt;span class=&quot;p&quot;&gt;-&lt;/span&gt;port&lt;span class=&quot;p&quot;&gt;-&lt;/span&gt;forwarding&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;permitopen&lt;span class=&quot;p&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&amp;quot;192.168.1.1:22&amp;quot;&lt;/span&gt; ssh&lt;span class=&quot;p&quot;&gt;-&lt;/span&gt;rsa AAAAB3Nza&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code&gt;command&lt;/code&gt; will execute a fixed command for each login with this public key, ignoring any other commands supplied by the client.&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;no-agent-forwarding&lt;/code&gt; and &lt;code&gt;no-port-forwarding&lt;/code&gt; will disallow agent/port forwarding.&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;no-pty&lt;/code&gt; will disallow pty allocations, useful for automation.&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;permitopen=&quot;host:port&quot;&lt;/code&gt; will only allow port forwards to this host/port. Can be repeated.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Using these options, one can use OpenSSH with a passphrase-less dedicated key
+for some unsupervised applications:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;A key which periodically calls the forced command (like a monitoring script).&lt;/li&gt;
+  &lt;li&gt;A key for permanently port-forwarding a (remote) port of an insecure
+application from A to B.&lt;/li&gt;
+  &lt;li&gt;A key which can only do backups to a certain location using a
+&lt;a href=&quot;https://www.guyrutenberg.com/2014/01/14/restricting-ssh-access-to-rsync/&quot;&gt;forced command like
+rrsync&lt;/a&gt;.&lt;/li&gt;
+  &lt;li&gt;A key which can only forward to another internal SSH host (&lt;code&gt;ProxyCommand&lt;/code&gt;).&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For a constant connection you can simply run &lt;code&gt;ssh&lt;/code&gt; via some process supervisor
+like runit.&lt;/p&gt;
+
+&lt;h1 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h1&gt;
+
+&lt;p&gt;The intention of this post was to show that OpenSSH is much more than just a
+remote-login tool. It can be used for various automated applications. The nice
+thing about using SSH for these cases is that it is cross-platform, dead-simple
+to setup, test and to actually understand the security and features offered by
+such a solution.&lt;/p&gt;
+
+&lt;p&gt;Want to forward a single port with some low-bandwidth yet high-value traffic
+over the Internet? Why set up a complicated VPN solution when you know how to
+use SSH? Want to have automated backups? Use SSH! Even if you only use SSH
+interactively, this post might have shown you a few tricks to improve your
+workflow.&lt;/p&gt;
+
+&lt;p&gt;Having something that a user already understands and which does not introduce a
+new attack surface is a huge security win in my opinion. The tendency of some
+modern software is to just bind to localhost and omit any form of
+authentication or transport security. Here, SSH can be used as a security
+layer, even if only during development. The same is true for supposedly secure
+protocols which you still don’t trust entirely. Used correctly, OpenSSH is a
+very robust system that does authentication, authorization and proper transport
+security and is part of every conceivable distribution. Also consider that
+OpenSSH is one of the pieces of your userland toolkit which is most closely
+reviewed and at the same time still being actively developed by the OpenBSD
+community.&lt;/p&gt;
+
+&lt;h1 id=&quot;going-further&quot;&gt;Going further&lt;/h1&gt;
+
+&lt;p&gt;Topics not mentioned here include:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://mosh.mit.edu/&quot;&gt;mosh&lt;/a&gt; - A roaming-friendly secure shell built upon SSH&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.harding.motd.ca/autossh/&quot;&gt;autossh&lt;/a&gt; - Automatically restarts SSH session&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://wiki.archlinux.org/index.php/Dm-crypt/Specialties#Remote_unlocking_of_the_root_.28or_other.29_partition&quot;&gt;dropbear&lt;/a&gt; - To remotely unlock LUKS-protected root drives&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://wiki.archlinux.org/index.php/Sshfs&quot;&gt;sshfs&lt;/a&gt; - FUSE-based remote mounting of paths&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;references&quot;&gt;References&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://wiki.archlinux.org/index.php/Secure_Shell&quot;&gt;Arch Linux Wiki on OpenSSH&lt;/a&gt; - Not surprisingly a very exhaustive reference.&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.jedi.be/blog/2010/08/27/ssh-tricks-the-usual-and-beyond/&quot;&gt;ssh tricks - the usual and beyond&lt;/a&gt; - Good post covering most of the same topics.&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://stribika.github.io/2015/01/04/secure-secure-shell.html&quot;&gt;Secure Secure Shell&lt;/a&gt; - Timely OpenSSH crypto hardening post.&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://docs.hardentheworld.org/Applications/OpenSSH/&quot;&gt;OpenSSH hardening tips&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://sshmenu.sourceforge.net/articles/transparent-mulithop.html&quot;&gt;ProxyCommand multi-hop magic&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://home.regit.org/2014/01/a-bit-of-logstash-cooking/&quot;&gt;logstash ingestion of iptables logs&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>SSH Agent Forwarding considered harmful</title>
+   <link href="https://heipei.github.io/2015/02/26/SSH-Agent-Forwarding-considered-harmful/"/>
+   <updated>2015-02-26T00:00:00+01:00</updated>
+   <id>https://heipei.github.io/2015/02/26/SSH-Agent-Forwarding-considered-harmful</id>
+   <content type="html">&lt;p&gt;&lt;strong&gt;tl;dr&lt;/strong&gt;: Don’t use SSH &lt;code&gt;ForwardAgent&lt;/code&gt;, it’s stupid and insecure. Use &lt;code&gt;ProxyCommand&lt;/code&gt; instead.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://news.ycombinator.com/item?id=9425805&quot;&gt;Hackernews thread on this post&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.reddit.com/r/netsec/comments/2xdcgx/ssh_agent_forwarding_considered_harmful/&quot;&gt;r/netsec thread on this post&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+
+&lt;p&gt;Since I recently saw &lt;a href=&quot;https://www.reddit.com/r/netsec/comments/2m2zpb/the_perils_of_using_an_sshagent/&quot;&gt;a post on Reddit
+netsec&lt;/a&gt;
+which sadly omitted what to use instead of ssh-agent, I felt it was time to
+write yet another discussion about the perils of what is a useless workflow at
+best and a dangerous habit at worst. I’ll show a simpler, more secure and more
+powerful alternative in the form of SSH &lt;code&gt;ProxyCommand&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h1 id=&quot;the-problem-with-ssh-agent-forwarding&quot;&gt;The problem with SSH Agent Forwarding&lt;/h1&gt;
+
+&lt;p&gt;SSH Agent Forwarding can be enabled by calling &lt;code&gt;ssh -A&lt;/code&gt; or by setting the
+&lt;code&gt;AgentForward&lt;/code&gt; flag in your config. It is meant as an easy way to connect to a
+host A with your SSH key and from there connect to another host B with that
+same key. This obviously is only needed if you cannot connect to host B
+directly from your workstation.&lt;/p&gt;
+
+&lt;p&gt;The problem is that while you’re connected to host A, a forwarding socket will
+be set up so that the SSH client on host A can connect to the ssh-agent on your
+workstation to perform authentication on its behalf. This means that anyone
+with sufficient permission on host A will be able to use that socket to connect
+to and use your local ssh-agent. It could be the root user or anyone else who
+managed to compromise host A. The result is that the user would be able to
+impersonate you to any host as long as you’re connected to host A.&lt;/p&gt;
+
+&lt;p&gt;You might say that host A only belongs to yourself, there is no other user on
+it, even less so someone with root access. But then again: Why take the chance?
+The probability of encountering a compromised machine increases with the number
+of hosts you connect to, and I know most people consider their workstation
+their most secure host.&lt;/p&gt;
+
+&lt;p&gt;You might also say that the window of compromise is small since it is only open
+while you’re connected to host A. Again: Why take the risk? This is like having
+unprotected sex only for a short amount of time. And sometimes you &lt;em&gt;do&lt;/em&gt; leave
+that SSH session open while you’re out for lunch or something is processing in
+the background.&lt;/p&gt;
+
+&lt;p&gt;Then there is the last line of reasoning: Only using a dedicated key for
+forwarding to host A. This argument also becomes void if you consider that
+someone who originally only had access to host A can now also access host B.
+And furthermore, keeping track of which keys have been added to your local
+ssh-agent is a tedious task. SSH is very promiscuous when it comes to using SSH
+keys, and once you make use of another key it will happily add that to your
+current agent session.&lt;/p&gt;
+
+&lt;p&gt;Lastly, SSH Agent Forwarding only works for interactive sessions which gives it
+that very ghetto feeling of missing out on basically all the great features SSH
+has to offer. Ever copied a file to host A and then to host B? You’re doing it
+wrong!&lt;/p&gt;
+
+&lt;h1 id=&quot;the-alternative-proxycommand-to-the-rescue&quot;&gt;The alternative: ProxyCommand to the rescue&lt;/h1&gt;
+
+&lt;p&gt;If you’re still reading this, chances are that you’re not aware of the awesome
+toolbox that is SSH (or at least OpenSSH, let’s be honest).&lt;/p&gt;
+
+&lt;p&gt;OpenSSH has an option called &lt;code&gt;ProxyCommand&lt;/code&gt;. It works by specifying a
+ProxyCommand to connect to host B. The config would look like this for our
+simple example:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-apache&quot; data-lang=&quot;apache&quot;&gt;&lt;span class=&quot;lineno&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Host&lt;/span&gt; hosta
+&lt;span class=&quot;lineno&quot;&gt;2&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;User&lt;/span&gt; userfoo
+&lt;span class=&quot;lineno&quot;&gt;3&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;Hostname&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;123.123.123.123&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;4&lt;/span&gt; 
+&lt;span class=&quot;lineno&quot;&gt;5&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Host&lt;/span&gt; hostb
+&lt;span class=&quot;lineno&quot;&gt;6&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;User&lt;/span&gt; userbar
+&lt;span class=&quot;lineno&quot;&gt;7&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;Hostname&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;192.168.1.1&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;8&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;Port&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;2222&lt;/span&gt;
+&lt;span class=&quot;lineno&quot;&gt;9&lt;/span&gt; 	&lt;span class=&quot;nb&quot;&gt;ProxyCommand&lt;/span&gt; ssh -q -W %h:%p hosta&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This config tells your local SSH client to connect to host A via a direct
+connection. Now, if you type &lt;code&gt;ssh hostb&lt;/code&gt; what it will do is connect to host A
+first and then forward your SSH client via the &lt;code&gt;ProxyCommand&lt;/code&gt; to the host and
+port specified by the &lt;code&gt;-W&lt;/code&gt; parameter, in this case I used &lt;code&gt;192.168.1.1&lt;/code&gt; to
+underline that this is an &lt;em&gt;internal&lt;/em&gt; host. Your local SSH client will then
+authenticate to host B as if you were connected to it directly.&lt;/p&gt;
+
+&lt;p&gt;Another observation here is that you don’t need to memorize anything about the
+host, neither it’s IP or obscure hostname, port or username when you can simply
+alias it with the &lt;code&gt;Host&lt;/code&gt; line.&lt;/p&gt;
+
+&lt;h1 id=&quot;legitimate-uses-of-forwardagent&quot;&gt;Legitimate uses of ForwardAgent&lt;/h1&gt;
+
+&lt;p&gt;I’ve been trying to come up with legitimate reasons for using SSH agent
+forwarding but failed to do so. I’ve only recently discovered one case where
+agent forwarding is not only useful but also secure: Namespaces.&lt;/p&gt;
+
+&lt;p&gt;With Linux namespaces (filesystem, process, network namespaces) processes can
+be put into their own namespaces on the same machine. This is something that
+makes Docker work, but it can also be used standalone to create a number of
+different networking setups. If you run &lt;code&gt;sshd&lt;/code&gt; in your separate network
+namespace, you can then ssh into that namespace to work from there and connect
+to the host only reachable from the namespace. Since you’re connecting to your
+own machine, forwarding your ssh-agent does not increase the attack surface:
+It’s still your machine.&lt;/p&gt;
+
+&lt;p&gt;What would the alternative look like? Well, you can ssh into your namespace,
+spawn a separate ssh-agent there and then add all your keys to that, typing
+each passphrase again. Or you could create a &lt;code&gt;ProxyCommand&lt;/code&gt; to use your
+namespace as an intermediate host, either globally or per-host. But then you’d
+have to toggle that on and off if you ever want to connect to the host directly
+as opposed to through the namespace. Here, a simple &lt;code&gt;ssh -A&lt;/code&gt; clearly wins in
+terms of convenience.&lt;/p&gt;
+
+&lt;h1 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h1&gt;
+
+&lt;p&gt;By now you should have some idea about why not to use SSH Agent Forwarding. If
+you do have a legitimate use-case which I haven’t covered here, feel free to
+leave it in the comments. I’ll follow up this post with a general breakdown of
+some of the awesome features that SSH has to offer. The &lt;code&gt;ProxyCommand&lt;/code&gt; will
+play a key role, but there are lot’s of other goodies hidden inside OpenSSH.&lt;/p&gt;
+
+&lt;h1 id=&quot;updates---march-4-2015&quot;&gt;Updates - March 4 2015&lt;/h1&gt;
+
+&lt;p&gt;After I posted this post on &lt;a href=&quot;https://www.reddit.com/r/netsec/&quot;&gt;r/netsec&lt;/a&gt; it
+quickly got quite few replies and some interesting discussions developed. As I
+mentioned in the post I was open for suggestions where ssh-agent might be hard
+to replace and how to use it more securely.&lt;/p&gt;
+
+&lt;p&gt;One thing a number of people mentioned was using &lt;code&gt;ssh-agent -c&lt;/code&gt; which will show
+a confirmation window each time some program wants to use the agent to
+authenticate somewhere. This is certainly a cool feature, though it will also
+trigger for local users (i.e. you) and thus might be annoying.&lt;/p&gt;
+
+&lt;p&gt;As for reasons to use SSH Agent Forwarding in the first place, there was one
+argument which I can relate to: Performance. If the hosts (jump-host and target
+host) are behind a slow uplink and you frequently have to get data from one
+host to the other it really sucks having to copy everything to your local
+workstation and then back up. Unless a dedicated key which resides on either of
+the hosts does the trick you’re stuck with Agent Forwarding.&lt;/p&gt;
+
+&lt;p&gt;The other reason I heard was “convenience”. As I’ll show with my next post on
+SSH, Agent Forwarding is a lot less convenient in a number of ways.&lt;/p&gt;
+
+&lt;p&gt;A big problem about Agent Forwarding I forgot to mention is this by the way: If
+an attacker compromises Host A he can not only use your forwarded agent when
+you’re connected but he is actually able to eavesdrop on your ongoing session.
+So even if you had an additional layer of security on Host B (password,
+time-based token), the attacker could read and modify everything about your
+session. ProxyCommand will prevent this from happening since the SSH session to
+Host B terminates on your workstation!&lt;/p&gt;
+
+&lt;h1 id=&quot;references&quot;&gt;References&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://news.ycombinator.com/item?id=9425805&quot;&gt;Hackernews thread on this post&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.reddit.com/r/netsec/comments/2xdcgx/ssh_agent_forwarding_considered_harmful/&quot;&gt;r/netsec thread on this post&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.reddit.com/r/netsec/comments/2m2zpb/the_perils_of_using_an_sshagent/&quot;&gt;The perils of using an ssh-agent&lt;/a&gt; - Post which fails to mention ProxyCommand&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https//sshmenu.sourceforge.net/articles/transparent-mulithop.html&quot;&gt;Good post on ssh-agent and ProxyCommand&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/alonbl/vpnc-scripts/blob/master/vpnc-script-sshd&quot;&gt;Putting vpnc into a Linux network namespace&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://lwn.net/Articles/580893/&quot;&gt;Linux network namespaces in operation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>UDF for cross-OS file-transfer using removable media</title>
+   <link href="https://heipei.github.io/2014/12/21/UDF-for-cross-OS-file-transfer/"/>
+   <updated>2014-12-21T00:00:00+01:00</updated>
+   <id>https://heipei.github.io/2014/12/21/UDF-for-cross-OS-file-transfer</id>
+   <content type="html">&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+
+&lt;p&gt;Ever since you started using more than one OS you knew the inherent problems of exchanging data between different OSs.
+Unless you transfer everything via network, you will have to make a choice regarding the filesystem on a removable
+drive.&lt;/p&gt;
+
+&lt;p&gt;For this post we consider the common scenario of wanting to move files between Linux, Mac OS and Windows. If you
+consider only a subset of these you might get away with other filesystems as well. Each filesystem you choose will have
+a number of limitations. Some might be read-only in one or two of the destination OSs, others might have limits on the
+filesize (4GB anyone?) and yet others might require you to install closed-sourced commercial software to use them.&lt;/p&gt;
+
+&lt;p&gt;Up until recently, I would use FAT32 to exchange files (or backups) between devices. This worked reasonably well, but in
+2014 you can expect to have a number of files which exceed FAT32s 4GB limit on filesize. Only think about Virtual
+Machine images!&lt;/p&gt;
+
+&lt;p&gt;Recently, I stumbled on a surprisingly simple solution for my problem: UDF! Everybody knows and supports UDF (Universal
+Disk Format) because it’s the filesystem used on DVDs etc. Reading about UDF, it’s also the filesystem for DVD-RAM (a
+relic disk format which could be used to create incremental backups by burning them to a DVD disk). I never thought
+about it, but UDF can also be used as a filesystem for read-write media, and current operating systems support it just
+fine. To top it of, UDF is both case-sensitive and case-preserving and has POSIX file permissions, not something to take
+for granted even with modern filesystems. A tabular feature comparison between UDF, NTFS, FAT32 and exFAT can be found in
+the &lt;a href=&quot;https://msdn.microsoft.com/en-us/library/windows/desktop/ee681827&quot;&gt;Windows Dev Center&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h1 id=&quot;creating-a-udf-drive&quot;&gt;Creating a UDF drive&lt;/h1&gt;
+
+&lt;p&gt;Now, this is the tricky part, and the one where your mileage might vary wildly. Please contact me with any improvements
+on these steps. For this I’m assuming that I have a Linux host to create the UDF filesystem and a Mac OS X host to use
+it with.&lt;/p&gt;
+
+&lt;p&gt;On Linux, install mkudffs (package udftools). Insert the drive you want to format using UDF (sdb in our example).&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;dd &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/dev/zero &lt;span class=&quot;nv&quot;&gt;of&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/dev/sdb &lt;span class=&quot;nv&quot;&gt;bs&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;1M &lt;span class=&quot;nv&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;1
+sync
+mkudffs --blocksize&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;512&lt;/span&gt; --media-type&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;hd /dev/sdb
+sync&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Then insert the new drive into your Mac OS machine. It will be mounted as “LinuxUDF”. You can then simply rename the
+drive.&lt;/p&gt;
+
+&lt;h1 id=&quot;mounting-a-udf-drive-at-a-fixed-mount-point-in-mac-os-x&quot;&gt;Mounting a UDF drive at a fixed mount point in Mac OS X&lt;/h1&gt;
+
+&lt;p&gt;If you use a removable drive on a Mac OS machine frequently (or permanently) it would be nice to mount it at a fixed
+location rather than under &lt;tt&gt;/Volume/drivename&lt;/tt&gt;. Mac OS still has an fstab-mechanism, but the way to edit the file differs
+from Linux. Also, since our UDF does not have a UUID, we will to identify it using a label, so make sure to give a
+unique name to each of your UDF-formatted drives.&lt;/p&gt;
+
+&lt;p&gt;Eject the UDF drive you renamed in the earlier step. Open the Terminal and start vifs:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;sudo vifs&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Add a line like this to the empty fstab file:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nv&quot;&gt;LABEL&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;JF64GB  /Users/jojo/mnt/jf64gb  udf rw,auto&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;When you insert the drive into your Mac, it will auto-mount at the given mountpoint. It will still show up as a
+removable drive on your desktop, and you can still eject it like you did before.&lt;/p&gt;
+
+&lt;h1 id=&quot;open-problems&quot;&gt;Open problems&lt;/h1&gt;
+
+&lt;p&gt;First of all, I haven’t actually tested whether the UDF drive I created also works on Windows. But given the age and 
+pervasion of the UDF standard, I’d be inclined to chalk it up to Windows if it didn’t work.&lt;/p&gt;
+
+&lt;p&gt;My biggest concern with this setup is that there currently is no Open Source platform-interoperable way to do full-disk
+encryption (FDE). Ever since Truecrypt shut down, there isn’t even a way to do it between Mac OS and Linux, though both
+have very mature FDE solutions builtin. You could use &lt;a href=&quot;https://github.com/vgough/encfs&quot;&gt;encfs&lt;/a&gt; which is a FUSE-based filesystem
+which encrypts both the content and the filenames (but leaves the directory structure visible). encfs is availabe in
+most Linux distributions and in homebrew.&lt;/p&gt;
+
+&lt;h1 id=&quot;update---january-2014&quot;&gt;Update - January 2014&lt;/h1&gt;
+
+&lt;p&gt;I’ve since experienced a scenario where a UDF-drive on my Linux machine
+exhibited some really strange behaviour during writes (via rsync for example),
+resulting in a 100% CPU load of the process doing the writing. Since I did not
+have the time to investigate I simply switched that disk back to ext4 for now.&lt;/p&gt;
+
+&lt;h1 id=&quot;references&quot;&gt;References&lt;/h1&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://osquestions.com/unix-linux/35973/udf-and-fstab-no-uuid&quot;&gt;UDF and fstab without UUID&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://tanguy.ortolo.eu/blog/article93/usb-udf&quot;&gt;Creating UDF filesystem using mkudffs&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://wiki.archlinux.org/index.php/disk_encryption#compatibility_.26_prevalence&quot;&gt;Arch Linux on Disk Encryption&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Using hpfriends - the social data-sharing platform</title>
+   <link href="https://heipei.github.io/2013/05/11/Using-hpfriends-the-social-data-sharing-platform/"/>
+   <updated>2013-05-11T00:00:00+02:00</updated>
+   <id>https://heipei.github.io/2013/05/11/Using-hpfriends-the-social-data-sharing-platform</id>
+   <content type="html">&lt;p&gt;&lt;em&gt;Abstract&lt;/em&gt;: This post introduces the &lt;a href=&quot;https://hpfriends.honeycloud.net&quot;&gt;hpfriends&lt;/a&gt; system, which is a a new sharing model
+and web frontend for the hpfeeds data-sharing platform. Readers will learn how to use the hpfriends frontend to publish
+and subscribe to data-channels in the hpfeeds system and share their data with other users. There is a &lt;a href=&quot;/2013/05/10/The-architecture-behind-hpfriends/&quot;&gt;separate
+post&lt;/a&gt; on the architecture of hpfriends.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;TOC&lt;/strong&gt;: &lt;a href=&quot;#hpfriends&quot;&gt;Using hpfriends&lt;/a&gt;, &lt;a href=&quot;#hpfeeds&quot;&gt;using hpfeeds&lt;/a&gt; and &lt;a href=&quot;#dionaea&quot;&gt;using
+hpfeeds with dionaea&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/rep/hpfeeds&quot;&gt;hpfeeds&lt;/a&gt; is a simple publish/subscribe data
+sharing model. It was initially created by &lt;a href=&quot;https://twitter.com/repmovsb&quot;&gt;Mark ‘rep’
+Schloesser&lt;/a&gt; as a way to carry high-volume
+real-time data from different pieces of honeypot software between members of
+the Honeynet project. hpfriends is an evolution of the hpfeeds data sharing
+model. It uses the same wire protocol and thus maintains
+backwards-compatibility with all data sources / sinks.&lt;/p&gt;
+
+&lt;p&gt;However, instead of relying on access authorization based on channels,
+hpfriends uses a social graph in order to make sharing data even easier and
+more natural. This also circumvents some policy issues about which people
+should be able to use hpfeeds and who should be allowed onto which channels.&lt;/p&gt;
+
+&lt;h1 id=&quot;using-hpfriends-a-namehpfriendsnbspa&quot;&gt;Using hpfriends &lt;a name=&quot;hpfriends&quot;&gt; &lt;/a&gt;&lt;/h1&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/menu.png&quot; alt=&quot;hpfriends menu&quot; title=&quot;hpfriends main menu&quot; /&gt;
+&lt;br /&gt;&lt;small&gt;This is the main menu of hpfriends. It will appear on every page.&lt;/small&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Shares&lt;/strong&gt; display the channels &lt;em&gt;you&lt;/em&gt; share with other users and group. &lt;strong&gt;Shared
+with you&lt;/strong&gt; is data that other users share with you, either directly or via
+groups.&lt;/p&gt;
+
+&lt;p&gt;You can create and edit permissions for your authkeys under &lt;strong&gt;Authkeys&lt;/strong&gt;, while
+&lt;strong&gt;Logs&lt;/strong&gt; contain information about failed attempts to use your authkeys.&lt;/p&gt;
+
+&lt;p&gt;If you click &lt;strong&gt;Groups&lt;/strong&gt;, you’ll be able to create groups and see your
+memberships in other groups. The &lt;strong&gt;Search&lt;/strong&gt; page allows you to quickly search
+for channels, log messages and groups.&lt;/p&gt;
+
+&lt;h2 id=&quot;sharing-data&quot;&gt;Sharing data&lt;/h2&gt;
+&lt;p&gt;This view shows channel names that you currently share with other users and
+groups. Click &lt;strong&gt;Add share&lt;/strong&gt; to define an additional sharing relationship.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/shares.png&quot; alt=&quot;hpfriends shares&quot; title=&quot;hpfriends shares&quot; /&gt;
+&lt;br /&gt;&lt;small&gt;Currently shared channels.&lt;/small&gt;&lt;/p&gt;
+
+&lt;p&gt;The &lt;em&gt;Type&lt;/em&gt; field specifies whether you only want to share data generated by
+yourself for that channel name or if you also want to redistribute data on that
+channel which you received from other users. Use the search-field above the
+select menu for users to filter for usernames.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/add_share.png&quot; alt=&quot;hpfriends shares&quot; title=&quot;hpfriends add share&quot; /&gt;
+&lt;br /&gt;&lt;small&gt;Adding a new share.&lt;/small&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;accepting-data&quot;&gt;Accepting data&lt;/h2&gt;
+
+&lt;p&gt;If other users share data channels with you, these shares will appear under
+&lt;strong&gt;Shared with you&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/incoming_shares.png&quot; alt=&quot;hpfriends incoming shares&quot; title=&quot;hpfriends incoming shares&quot; /&gt;
+&lt;br /&gt;&lt;small&gt;Data shared by other users.&lt;/small&gt;&lt;/p&gt;
+
+&lt;p&gt;This view shows that there are two channels currently shared with me directly.
+I have activated the channel &lt;code&gt;mobile.malware&lt;/code&gt; and could now receive and forward
+messages by this user on this channel. Since I am not interested in receiving
+data by user &lt;em&gt;leacab&lt;/em&gt; on channel &lt;code&gt;fooo&lt;/code&gt;, I didn’t activate it.&lt;/p&gt;
+
+&lt;h2 id=&quot;authkeys&quot;&gt;Authkeys&lt;/h2&gt;
+
+&lt;p&gt;If you want to publish and subscribe to data channels you have to add authkeys.
+The &lt;strong&gt;Authkeys&lt;/strong&gt; view shows one of my authkeys. It has different permission for
+publishing and subscribing, along with statistics about messages and bytes sent
+and received. Authkeys should be used as single-purpose tokens for different
+pieces of backend software, with the smallest necessary amount of privileges.
+This will reduce the impact if one of your sensors is compromised.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/authkeys.png&quot; alt=&quot;hpfriends authkeys&quot; title=&quot;hpfriends authkeys&quot; /&gt;
+&lt;br /&gt;&lt;small&gt;List and statistics of authkeys.&lt;/small&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;groups&quot;&gt;Groups&lt;/h2&gt;
+
+&lt;p&gt;Groups can be used to conveniently group and subsequently share data with a
+number of people. Currently, the group-functionality is somewhat limited. It is
+not possible to leave groups or to remove members.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/groups.png&quot; alt=&quot;hpfriends groups&quot; title=&quot;hpfriends groups&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;logs&quot;&gt;Logs&lt;/h2&gt;
+
+&lt;p&gt;The logs will contain error messages which arise when you misuse your authkeys.
+Check the logs first if you’re having problems publishing and subscribing to a
+channel.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/logs.png&quot; alt=&quot;hpfriends logs&quot; title=&quot;hpfriends logs&quot; /&gt;
+&lt;br /&gt;&lt;small&gt;Log messages indicate possible error sources with authkeys.&lt;/small&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;using-hpfeeds-a-namehpfeedsnbspa&quot;&gt;Using hpfeeds &lt;a name=&quot;hpfeeds&quot;&gt; &lt;/a&gt;&lt;/h1&gt;
+
+&lt;p&gt;At the end of the day, you want to use hpfeeds to publish your data and
+subscribe to data channels. This is where the hpfeeds cli tools come in. This
+section will show you how to use the tools in combination with hpfriends.&lt;/p&gt;
+
+&lt;h2 id=&quot;hpfeeds---python-implementation&quot;&gt;hpfeeds - python implementation&lt;/h2&gt;
+
+&lt;p&gt;The &lt;a href=&quot;https://github.com/rep/hpfeeds&quot;&gt;“reference” hpfeeds implementation&lt;/a&gt; was created by Mark and should be used in most cases. Simply get the source code from GitHub, no setup necessary.&lt;/p&gt;
+
+&lt;p&gt;There is small tool which you can use to manually publish and subscribe to channels. It is located in the &lt;code&gt;cli&lt;/code&gt; folder and can be used as follows:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;hpfeeds-client -i ident -s secret --host host -p port -c channel1 [-c channel2, ...] &#39;action&#39; [&amp;lt;data&amp;gt;]&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Where ‘action’ can be &lt;code&gt;publish&lt;/code&gt; or &lt;code&gt;subscribe&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Looking at our list of authkeys above, we could use our key to publish to channel random.int:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;hpfeeds-client --host hpfriends.honeycloud.net -p 20000 -i zNKeYNK -s KwxHqvJ -c random.int publish &quot;42&quot;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;We could also subscribe to one of the channels which our authkey has permissions to:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;hpfeeds-client --host hpfriends.honeycloud.net -p 20000 -i zNKeYNK -s KwxHqvJ -c geoloc.response subscribe&lt;/code&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;using-hpfeeds-with-dionaea-a-namedionaeanbspa&quot;&gt;Using hpfeeds with dionaea &lt;a name=&quot;dionaea&quot;&gt; &lt;/a&gt;&lt;/h1&gt;
+
+&lt;p&gt;One of the sensors that supports hpfeeds is dionaea - the most modern low-interaction server honeypot. This software is
+also the source for most events currently showing up on the &lt;a href=&quot;https://map.honeynet.org&quot;&gt;HoneyMap&lt;/a&gt;. Sadly the hpfeeds module is not part of the
+official git repository, so we need to make a small change to its setup steps.&lt;/p&gt;
+
+&lt;p&gt;To setup dionaea you need to follow the official setup instructions
+(&lt;a href=&quot;https://dionaea.carnivore.it/#compiling&quot;&gt;dionaea.carnivore.it&lt;/a&gt;) and then use the git URL
+&lt;code&gt;git://github.com/rep/dionaea.git&lt;/code&gt; instead of the normal dionaea one. This will include the hpfeeds module and the
+appropriate config section in the honeypot. After it compiled correctly and you installed dionaea on your system, you
+need to edit the &lt;code&gt;dionaea.conf&lt;/code&gt; file and enter your hpfeeds credentials, as well as enable the module. You get the
+authkey credentials by creating some in the hpfriends webinterface. The following is how the needed config sections look
+like:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;dionaea.conf&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;     hpfeeds = {
+       hp1 = {
+         server = &quot;hpfriends.honeycloud.net&quot;
+         port = &quot;10000&quot;
+         ident = &quot;&amp;lt;your_authkey_identifier&amp;gt;&quot;
+         secret = &quot;&amp;lt;your_authkey_secret&amp;gt;&quot;
+         // dynip_resolve: enable to lookup the sensor ip through a webservice
+         dynip_resolve = &quot;https://hpfriends.honeycloud.net/ip&quot;
+       }
+     }
+...
+     ihandlers = {
+...
+//    &quot;submit_http&quot;,
+      &quot;hpfeeds&quot;,
+//    &quot;logxmpp&quot;,
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Remember to also give your authkey the necessary access rights. It needs to be able to publish on the channels
+dionaea.capture, dionaea.shellcodeprofiles, dionaea.dcerpcrequests and mwbinary.dionaea.sensorunique.&lt;/p&gt;
+
+&lt;p&gt;After this is done you can start the honeypot and your captured attacks should be appearing on the hpfriends
+“dionaea.capture” channel. If you share this channel with Mark or the Honeynet Project in general and tell Mark about
+it, then he can also make your captured attacks on the HoneyMap with one click in the hpfriends interface.&lt;/p&gt;
+
+&lt;h1 id=&quot;further-reading&quot;&gt;Further reading&lt;/h1&gt;
+
+&lt;p&gt;hpfriends is maintained by &lt;a href=&quot;https://twitter.com/repmovsb&quot;&gt;Mark ‘rep’ Schloesser&lt;/a&gt; and &lt;a href=&quot;https://twitter.com/heipei&quot;&gt;Johannes ‘heipei’ Gilger&lt;/a&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://hpfriends.honeycloud.net&quot;&gt;hpfriends&lt;/a&gt; - the hpfriends website&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/rep/hpfeeds&quot;&gt;hpfeeds&lt;/a&gt; - hpfeeds GitHub repo&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/vicvega/hpfeeds-ruby&quot;&gt;hpfeeds-ruby&lt;/a&gt; - Ruby gem for hpfeeds&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/fw42/go-hpfeeds&quot;&gt;go-hpfeeds&lt;/a&gt; - Go implementation of hpfeeds&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://honeynet.org/&quot;&gt;Honeynet&lt;/a&gt; - The Honeynet Project&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://map.honeynet.org/&quot;&gt;HoneyMap&lt;/a&gt; - The HoneyMap, which uses hpfeeds&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>The architecture behind hpfriends</title>
+   <link href="https://heipei.github.io/2013/05/10/The-architecture-behind-hpfriends/"/>
+   <updated>2013-05-10T00:00:00+02:00</updated>
+   <id>https://heipei.github.io/2013/05/10/The-architecture-behind-hpfriends</id>
+   <content type="html">&lt;p&gt;&lt;em&gt;Abstract&lt;/em&gt;: In this post, readers will gain some insight into the architecture of the
+&lt;a href=&quot;https://hpfriends.honeycloud.net&quot;&gt;hpfriends&lt;/a&gt; platform. Users who want to learn how to use hpfriends should have a look
+at the guide on &lt;a href=&quot;/2013/05/11/Using-hpfriends-the-social-data-sharing-platform&quot;&gt;using hpfriends&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h1 id=&quot;introduction&quot;&gt;Introduction&lt;/h1&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/rep/hpfeeds&quot;&gt;hpfeeds&lt;/a&gt; is a simple publish/subscribe data sharing model. It was initially created by
+&lt;a href=&quot;https://twitter.com/repmovsb&quot;&gt;Mark ‘rep’ Schloesser&lt;/a&gt; as a way to carry high-volume real-time data from different pieces
+of honeypot software between members of the Honeynet project. hpfriends is an evolution of the hpfeeds data sharing
+model. It uses the same wire protocol and thus maintains backwards-compatibility with all data sources / sinks.&lt;/p&gt;
+
+&lt;p&gt;However, instead of relying on access authorization based on channels, hpfriends uses a social graph in order to make
+sharing data even easier and more natural. This also circumvents some policy issues about which people should be able to
+use hpfeeds and who should be allowed onto which channels.&lt;/p&gt;
+
+&lt;h1 id=&quot;architecture-a-namearchnbspa&quot;&gt;Architecture &lt;a name=&quot;arch&quot;&gt; &lt;/a&gt;&lt;/h1&gt;
+
+&lt;p&gt;Channels in hpfeeds are commonly used to group data of the same origin and structure. A channel dedicated to data from
+the dionaea honeypot software can be expected to carry data adherring to a specific format, suitable for automated
+processing. Before hpfriends, channel names were unique and global within the hpfeeds system. This meant that once a
+channel was established by a user (such as &lt;code&gt;dionaea.captures&lt;/code&gt;), that user had to grant permission each time another user
+wanted to publish or subscribe to the channel &lt;code&gt;dionaea.captures&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;hpfriends&quot;&gt;hpfriends&lt;/h2&gt;
+
+&lt;p&gt;hpfriends uses a social sharing graph as its backend database. That means that users and groups are represented as
+&lt;em&gt;nodes&lt;/em&gt;, while the sharing relationships are modelled as &lt;em&gt;edges&lt;/em&gt; between those nodes. Sharing is no binary attribute,
+which is why each edge contains a number of attributes, such as the type of the relationship and the channel name.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/images/graph.png&quot; alt=&quot;hpfriends graph&quot; title=&quot;hpfriends graph&quot; /&gt;
+&lt;br /&gt;&lt;small&gt;A (very small) subset of the hpfriends sharing graph.&lt;/small&gt;&lt;/p&gt;
+
+&lt;p&gt;Channels are no longer global broadcast rooms but rather local decisions. For each message on a channel and user node, a
+decision is made whether the channel can be accessed by other users based on the existence of a sharing relationship
+between the original user and other users and groups. Since a channel name can be used by anyone to publish messages,
+channels have de-facto become exclusive mandatory tags for messages.&lt;/p&gt;
+
+&lt;p&gt;If user &lt;strong&gt;jojo&lt;/strong&gt; has a sharing relationship on channel &lt;code&gt;dionaea.captures&lt;/code&gt; with user &lt;strong&gt;mark&lt;/strong&gt;, then &lt;em&gt;mark&lt;/em&gt; will be able
+to read messages on that channel. Other user groups might also use the channel name &lt;code&gt;dionaea.captures&lt;/code&gt;, yet have no
+sharing relationships with &lt;strong&gt;jojo&lt;/strong&gt; or &lt;strong&gt;mark&lt;/strong&gt;. User &lt;strong&gt;mark&lt;/strong&gt; may in turn decide to also share his &lt;code&gt;dionaea.captures&lt;/code&gt;
+messages with &lt;strong&gt;jojo&lt;/strong&gt;, or even re-distribute the messages he received from &lt;strong&gt;jojo&lt;/strong&gt; to third parties, i.e. other users
+and groups.  The difference between sharing only messages generated by the user or also incoming messages by other users
+is indicated using the &lt;code&gt;type&lt;/code&gt; attribute.&lt;/p&gt;
+
+&lt;h2 id=&quot;groups&quot;&gt;Groups&lt;/h2&gt;
+
+&lt;p&gt;Groups are used to address a number of people without having to establish sharing relationsships with each individual
+member. In our database, groups a represented as nodes which have an edge to each member.&lt;/p&gt;
+
+&lt;h2 id=&quot;authkeys&quot;&gt;Authkeys&lt;/h2&gt;
+
+&lt;p&gt;hpfriends uses Authkeys in the same fashion as the hpfeeds system. In fact, the hpfriends message broker is
+backwards-compatible to the hpfeeds tools. Authkeys are used as single-purpose tokens for different pieces of backend
+software which is needed to publish and subscribe to data-channels. Each Authkey has a list of channels it’s allowed to
+publish and subscribe to.&lt;/p&gt;
+
+&lt;h1 id=&quot;implementation&quot;&gt;Implementation&lt;/h1&gt;
+
+&lt;p&gt;The hpfriends system is still very much work-in-progress, which is why the implementation details are subject to change.&lt;/p&gt;
+
+&lt;p&gt;The sharing graph was realized with the &lt;a href=&quot;https://www.neo4j.org/&quot;&gt;Neo4j&lt;/a&gt; database, an Open-Source graph-database
+implemented in Java. Although Neo4j enables very efficient graph storage and operations it does have a few quirks.
+Concerning hpfeeds, it is obviously quite impractical and unnecessary to do a lookup on the sharing graph for each new
+message on a channel. Instead, we traverse the graph if the sharing relationships change and save the sharing attributes
+in a flat format afterwars.&lt;/p&gt;
+
+&lt;p&gt;For the web frontend we decided to go with the &lt;a href=&quot;https://www.meteor.com/&quot;&gt;Meteor&lt;/a&gt; JavaScript framework. Meteor is still
+being developed with frequent significant changes. But it enabled us to create a relatively simple real-time web
+application without having to worry about a lot of aspects. We chose to stick with the &lt;a href=&quot;https://twitter.github.io/bootstrap/&quot;&gt;Twitter
+Bootstrap&lt;/a&gt; HTML/CSS framework for the visual elements.&lt;/p&gt;
+
+&lt;p&gt;The &lt;a href=&quot;https://github.com/rep/hpfeeds&quot;&gt;reference implementation for hpfeeds&lt;/a&gt; was done in Python, but there are projects to
+bring hpfeeds support to &lt;a href=&quot;https://github.com/fw42/go-hpfeeds&quot;&gt;Go&lt;/a&gt; and &lt;a href=&quot;https://github.com/fw42/hpfeedsrb&quot;&gt;Ruby&lt;/a&gt;. If you
+are using these projects consider contributing patches or feedback.&lt;/p&gt;
+
+&lt;h1 id=&quot;further-reading&quot;&gt;Further reading&lt;/h1&gt;
+
+&lt;p&gt;hpfriends is maintained by &lt;a href=&quot;https://twitter.com/repmovsb&quot;&gt;Mark ‘rep’ Schloesser&lt;/a&gt; and &lt;a href=&quot;https://twitter.com/heipei&quot;&gt;Johannes ‘heipei’ Gilger&lt;/a&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://hpfriends.honeycloud.net&quot;&gt;hpfriends&lt;/a&gt; - the hpfriends website&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/rep/hpfeeds&quot;&gt;hpfeeds&lt;/a&gt; - hpfeeds GitHub repo&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/vicvega/hpfeeds-ruby&quot;&gt;hpfeeds-ruby&lt;/a&gt; - Ruby gem for hpfeeds, maintained by &lt;a href=&quot;https://github.com/vicvega&quot;&gt;Francesco Coda Zabetta&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/fw42/go-hpfeeds&quot;&gt;go-hpfeeds&lt;/a&gt; - Go implementation of hpfeeds, maintained by &lt;a href=&quot;https://twitter.com/fw1729&quot;&gt;Florian ‘fw’ Weingarten&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://honeynet.org/&quot;&gt;Honeynet&lt;/a&gt; - The Honeynet Project&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://map.honeynet.org/&quot;&gt;HoneyMap&lt;/a&gt; - The HoneyMap, which uses hpfeeds&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+ </entry>
+ 
  
 </feed>

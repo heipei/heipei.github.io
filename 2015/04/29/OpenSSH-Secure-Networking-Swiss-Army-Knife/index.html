@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en-gb">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>OpenSSH - Secure Networking Swiss-Army Knife</title>
+        <meta name="author" content="Johannes Gilger" />
+        <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+        <link rel="stylesheet" href="/css/syntax.css" type="text/css" media="all" />
+        <link rel="stylesheet" href="/css/screen.css" type="text/css" media="all" />
+        <link rel="canonical" href="https://heipei.github.io/2015/04/29/OpenSSH-Secure-Networking-Swiss-Army-Knife/" />
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+             (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+             })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-40830475-1', 'github.io');
+            ga('send', 'pageview');
+        </script>
+    </head>
+    <body>
+        <div class="header">
+            <div class="site">
+                <div class="title"><a href="/">Johannes 'heipei' Gilger</a><div class="block1"></div><div class="block2"></div><div class="block3"></div></div>
+            </div>
+        </div>
+        <div class="site">
+            <div id="post">
+	<h1>OpenSSH - Secure Networking Swiss-Army Knife</h1>
+	<p class="meta">29 Apr 2015</p>
+	<p><strong>tl;dr</strong>: Well-known yet underused OpenSSH features and their applications in
+building secure systems.</p>
+
+<ul>
+  <li><a href="https://www.reddit.com/r/netsec/comments/34az9p/openssh_secure_networking_swissarmy_knife/">r/netsec thread</a></li>
+  <li><a href="https://news.ycombinator.com/item?id=9460608">Hackernews thread</a></li>
+</ul>
+
+<h1 id="introduction">Introduction</h1>
+
+<p>My <a href="/2015/02/26/SSH-Agent-Forwarding-considered-harmful/">last post on this
+blog</a> was about the
+dangers of using SSH Agent Forwarding. In that post I recommended using OpenSSH
+<code>ProxyCommand</code> as not only a workaround but actually a superior way of hopping
+between hosts. This feature is clearly documented and intended to be used as
+such, still a lot of the discussions which ensued on Reddit and Netsec showed me
+that there are quite a number of users who were previously unaware of these
+features. That’s what prompted me to do a follow-up on some additional
+“tricks”, even if it’s just the application of something clearly documented in
+the manpages. But then, not everybody reads the manpages.</p>
+
+<p>This post will cover some of these features and also provide some references
+for further reading. I’ll start by introducing the basic features and then
+presenting some ways to use them. The biggest takeaway is this:</p>
+
+<blockquote>
+  <p>OpenSSH is a lot more than a tool to securely to connect to your VPS. Think
+of it as a simple, well-understood building-block for constructing secure
+distributed systems, for both automated and interactive applications. With
+the right workflow, employing OpenSSH will come to you very naturally and
+comfortably.
+<br /><small><b>Me, April 2015</b></small></p>
+</blockquote>
+
+<h1 id="securing-openssh">Securing OpenSSH</h1>
+
+<p>We start of by applying reasonable security settings to our OpenSSH workflow.
+In the recent months there were enough posts written on this topic, so I’ll
+just reference them here. It boils down to this:</p>
+
+<ul>
+  <li>Protecting your private key with a passphrase.</li>
+  <li>Disabling logins via password.</li>
+  <li>Explicitly disallowing all but the most secure Ciphers, MACs and Key Exchange algorithms.</li>
+  <li>Monitoring and preventing brute force connections.</li>
+</ul>
+
+<p>The most current and comprehensive post on this topic has been written by
+<a href="https://twitter.com/stribika">@stribika</a> in his blog-post <a href="https://stribika.github.io/2015/01/04/secure-secure-shell.html">Secure Secure
+Shell</a>. His
+observations are spot-on, including the section on “System hardening”: <i>Keep
+a clean system</i>.</p>
+
+<p>What I like to do on top of this is to employ some way of monitoring the SSH
+logs and rate-limiting connection attempts in a very crude way. Monitoring SSH
+connection attempts can be done by logging TCP connections to your SSH ports
+and then ingesting these logs into something like Logstash and Kibana. To
+rate-limit connection attempts I use a very simple iptables ruleset because I
+don’t trust systems like fail2ban enough.</p>
+
+<ul>
+  <li>Move your SSH to a high port instead of running it on tcp/22. This will
+eliminate practically any noise in the TCP logs: <code>Port 12345</code> in <code>sshd_config</code></li>
+  <li>Setup rate-limiting to your SSH listening port just in case:</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">iptables -A INPUT -p tcp --dport <span class="m">12345</span> -m conntrack --ctstate NEW -m recent --set
+iptables -A INPUT -p tcp --dport <span class="m">12345</span> -m conntrack --ctstate NEW -m recent <span class="se">\</span>
+	--update --seconds <span class="m">120</span> --hitcount <span class="m">3</span> -j DROP
+iptables -A INPUT -p tcp --dport <span class="m">12345</span> -j ACCEPT</code></pre></figure>
+
+<ul>
+  <li>On a multi-user system it might be reasonable to disallow some features
+globally, such as agent forwarding, port forwarding and dynamic port
+forwarding.</li>
+  <li>If you’re adventurous you can also employ <a href="https://www.digitalocean.com/community/tutorials/how-to-configure-port-knocking-using-only-iptables-on-an-ubuntu-vps">port-knocking using nothing but
+iptables</a>.</li>
+</ul>
+
+<h1 id="sshconfig">~/.ssh/config</h1>
+<p>Next we turn our attention to your <code>~/.ssh/config</code> file. This file can be used
+to configure per-host parameters, most commonly a combination of a custom port
+and username.</p>
+
+<p>You should consider <code>~/.ssh/config</code> your authoritative and only sources about
+your hosts. Whenever you get access to a new host just add it to this file and
+don’t worry about remembering it. The <code>Host</code> line can be used to create aliases
+which are easy to remember (e.g. <code>ams-vps</code> instead of a raw IP).</p>
+
+<p>Let’s examine a contrived example to show the options I find myself most frequently using:</p>
+
+<figure class="highlight"><pre><code class="language-apache" data-lang="apache"><span class="lineno"> 1</span> <span class="nb">ServerAliveInterval</span> <span class="m">10</span>
+<span class="lineno"> 2</span> <span class="nb">TCPKeepAlive</span> no
+<span class="lineno"> 3</span> 
+<span class="lineno"> 4</span> <span class="nb">Host</span> ams-vps
+<span class="lineno"> 5</span> 	<span class="nb">Hostname</span> <span class="m">123.123.123.123</span>
+<span class="lineno"> 6</span> 	<span class="nb">Port</span> <span class="m">12345</span>
+<span class="lineno"> 7</span> 	<span class="nb">User</span> root
+<span class="lineno"> 8</span> 	<span class="nb">IdentityFile</span> ~/.ssh/vps_key
+<span class="lineno"> 9</span> 	<span class="nb">IdentitiesOnly</span> yes
+<span class="lineno">10</span> 	<span class="nb">LocalForward</span> <span class="m">8080</span> localhost:80
+<span class="lineno">11</span> 	<span class="nb">DynamicForward</span> <span class="m">9090</span></code></pre></figure>
+
+<p>Let’s go through these lines one by one, ignoring the “Alive” lines.</p>
+
+<ul>
+  <li>The <code>Host</code> alias is <code>ams-vps</code> so I can remember it easily.</li>
+  <li>The <code>Hostname</code> is the actual IP or hostname of the host.</li>
+  <li>It uses a non-standard <code>Port</code>.</li>
+  <li>I have to login with a different user than on my local machine.</li>
+  <li>I have a separate keypair for this host in <code>vps_key</code> and I only want to use that one.</li>
+  <li>I want to be able to access <code>tcp/80</code> on the remote host via <code>localhost:8080</code>.
+    <ul>
+      <li>This is great if you want to access some piece of remote software which you
+ would not want to expose on the Internet. Like a plain HTTP server, or a
+ VNC-server if you’re running virtual machines on the remote host.</li>
+    </ul>
+  </li>
+  <li>I want a SOCKS proxy server listening locally on <code>tcp/9090</code> terminated with the remote host.
+    <ul>
+      <li>Using a SOCKS proxy I can easily tunnel a lot of traffic through this
+machine, for example to circumvent geo-IP restrictions. I could use my
+browser to use this proxy and then browse via the remote host. With Chrome,
+this works best by using a separate profile, so you can keep your regular
+profile running without the proxy.</li>
+    </ul>
+  </li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-nginx" data-lang="nginx">   <span class="k">google-chrome-stable</span>
+   <span class="s">--user-data-dir=</span><span class="nv">$HOME/.config/google-chrome-socks</span>
+   <span class="s">--proxy-server=socks://localhost:9090</span></code></pre></figure>
+
+<p>My <code>~/.ssh/config</code> is currently ~250 lines long, just to give you an idea. The
+newest versions of OpenSSH even allow include statements in this file.</p>
+
+<h1 id="controlmaster">ControlMaster</h1>
+<p>OpenSSH <code>ControlMaster</code> is one of the options that I use globally in my <code>~/.ssh/config</code>.</p>
+
+<figure class="highlight"><pre><code class="language-apache" data-lang="apache"><span class="nb">ControlMaster</span> auto		# Auto == Create and use as needed
+<span class="nb">ControlPath</span> <span class="sx">/tmp/</span>%r@%h:%p	# The sockets are stored here
+<span class="nb">ControlPersist</span> yes		# Optional</code></pre></figure>
+
+<p>What <code>ControlMaster</code> does is create (and subsequently use) a control socket
+for each connection to a remote server. SSH supports multiple independent
+“channels” which can be multiplexed over a single existing SSH connection. On
+the first connection to a host, OpenSSH will create a control socket in <code>/tmp</code>.
+With each subsequent connection, if a ControlMaster exists for a given
+user/host/port, OpenSSH will use it to create a new channel (pty or scp) within
+the existing SSH connection without going through the SSH handshake and shared
+secret agreement. The socket will be destroyed when the last SSH session
+disconnects.</p>
+
+<p>The biggest reason for me to use <code>ControlMaster</code> is <em>performance</em>. The SSH
+handshake does take a while, even more so with increasing latency. While this
+might not be an issue for the occasional login, it is really annoying or
+downright prohibitive when trying to connect more frequently. The prime example
+here is remote scp-completion, something that zsh is capable of doing out of
+the box. Unless you’re on your local network, scp-completion just plain sucks
+without <code>ControlMaster</code>. The problem is even amplified when considering
+scenarios with more than one hop (<code>ProxyCommand</code>). In this case, each full SSH
+session establishment can take several seconds.</p>
+
+<p>The <code>ControlPersist</code> keyword is optional. I don’t use it because I like to keep
+track of the open session, but software like Ansible employs it to have the
+control socket linger for a while after the last/initial SSH connection is
+closed.</p>
+
+<h1 id="proxycommand">ProxyCommand</h1>
+
+<p>I’m not going to talk about <code>ProxyCommand</code> at length since I mentioned its
+benefits in my <a href="/2015/02/26/SSH-Agent-Forwarding-considered-harmful/">last
+post</a>. As a quick recap:
+<code>ProxyCommand</code> allows your system to connect to an otherwise inaccessible system
+via one or multiple intermediate “hops”. It has undeniable advantages in terms
+of usability and security over using something like SSH agent forwarding. The
+number of ways you could get pwned when not using <code>ProxyCommand</code> is not
+something to be dismissed lightly.</p>
+
+<p>Suffice to say, none of the features I mentioned in this post (<code>LocalForward</code>,
+<code>DynamicForward</code>, <code>ControlMaster</code>) work if you use agent forwarding or manual
+hopping as opposed to using <code>ProxyCommand</code>. One more reason to reconsider.</p>
+
+<h1 id="sshauthorizedkeys">~/.ssh/authorized_keys</h1>
+
+<p>The <code>authorized_keys</code> file specifies which public key is allowed to login to
+the current account. You’ve probably used it when adding your own public key on
+a remote server. The basic format of this is very simple: It takes one SSH
+public key per line to allow login via that key.</p>
+
+<p>Some people might not know that you can actually add a number of options per
+key. The complete description is in <code>man sshd</code>, I’ll only cover the options I
+frequently use.</p>
+
+<figure class="highlight"><pre><code class="language-vim" data-lang="vim">command<span class="p">=</span><span class="s2">&quot;date&quot;</span><span class="p">,</span>no<span class="p">-</span>agent<span class="p">-</span>forwarding<span class="p">,</span>no<span class="p">-</span>pty<span class="p">,</span>no<span class="p">-</span>port<span class="p">-</span>forwarding<span class="p">,</span>permitopen<span class="p">=</span><span class="s2">&quot;192.168.1.1:22&quot;</span> ssh<span class="p">-</span>rsa AAAAB3Nza</code></pre></figure>
+
+<ul>
+  <li><code>command</code> will execute a fixed command for each login with this public key, ignoring any other commands supplied by the client.</li>
+  <li><code>no-agent-forwarding</code> and <code>no-port-forwarding</code> will disallow agent/port forwarding.</li>
+  <li><code>no-pty</code> will disallow pty allocations, useful for automation.</li>
+  <li><code>permitopen="host:port"</code> will only allow port forwards to this host/port. Can be repeated.</li>
+</ul>
+
+<p>Using these options, one can use OpenSSH with a passphrase-less dedicated key
+for some unsupervised applications:</p>
+
+<ul>
+  <li>A key which periodically calls the forced command (like a monitoring script).</li>
+  <li>A key for permanently port-forwarding a (remote) port of an insecure
+application from A to B.</li>
+  <li>A key which can only do backups to a certain location using a
+<a href="https://www.guyrutenberg.com/2014/01/14/restricting-ssh-access-to-rsync/">forced command like
+rrsync</a>.</li>
+  <li>A key which can only forward to another internal SSH host (<code>ProxyCommand</code>).</li>
+</ul>
+
+<p>For a constant connection you can simply run <code>ssh</code> via some process supervisor
+like runit.</p>
+
+<h1 id="conclusion">Conclusion</h1>
+
+<p>The intention of this post was to show that OpenSSH is much more than just a
+remote-login tool. It can be used for various automated applications. The nice
+thing about using SSH for these cases is that it is cross-platform, dead-simple
+to setup, test and to actually understand the security and features offered by
+such a solution.</p>
+
+<p>Want to forward a single port with some low-bandwidth yet high-value traffic
+over the Internet? Why set up a complicated VPN solution when you know how to
+use SSH? Want to have automated backups? Use SSH! Even if you only use SSH
+interactively, this post might have shown you a few tricks to improve your
+workflow.</p>
+
+<p>Having something that a user already understands and which does not introduce a
+new attack surface is a huge security win in my opinion. The tendency of some
+modern software is to just bind to localhost and omit any form of
+authentication or transport security. Here, SSH can be used as a security
+layer, even if only during development. The same is true for supposedly secure
+protocols which you still don’t trust entirely. Used correctly, OpenSSH is a
+very robust system that does authentication, authorization and proper transport
+security and is part of every conceivable distribution. Also consider that
+OpenSSH is one of the pieces of your userland toolkit which is most closely
+reviewed and at the same time still being actively developed by the OpenBSD
+community.</p>
+
+<h1 id="going-further">Going further</h1>
+
+<p>Topics not mentioned here include:</p>
+
+<ul>
+  <li><a href="https://mosh.mit.edu/">mosh</a> - A roaming-friendly secure shell built upon SSH</li>
+  <li><a href="https://www.harding.motd.ca/autossh/">autossh</a> - Automatically restarts SSH session</li>
+  <li><a href="https://wiki.archlinux.org/index.php/Dm-crypt/Specialties#Remote_unlocking_of_the_root_.28or_other.29_partition">dropbear</a> - To remotely unlock LUKS-protected root drives</li>
+  <li><a href="https://wiki.archlinux.org/index.php/Sshfs">sshfs</a> - FUSE-based remote mounting of paths</li>
+</ul>
+
+<h1 id="references">References</h1>
+
+<ul>
+  <li><a href="https://wiki.archlinux.org/index.php/Secure_Shell">Arch Linux Wiki on OpenSSH</a> - Not surprisingly a very exhaustive reference.</li>
+  <li><a href="https://www.jedi.be/blog/2010/08/27/ssh-tricks-the-usual-and-beyond/">ssh tricks - the usual and beyond</a> - Good post covering most of the same topics.</li>
+  <li><a href="https://stribika.github.io/2015/01/04/secure-secure-shell.html">Secure Secure Shell</a> - Timely OpenSSH crypto hardening post.</li>
+  <li><a href="http://docs.hardentheworld.org/Applications/OpenSSH/">OpenSSH hardening tips</a></li>
+  <li><a href="http://sshmenu.sourceforge.net/articles/transparent-mulithop.html">ProxyCommand multi-hop magic</a></li>
+  <li><a href="https://home.regit.org/2014/01/a-bit-of-logstash-cooking/">logstash ingestion of iptables logs</a></li>
+</ul>
+
+</div>
+<!--
+
+<div id="related">
+  <h2>Related Posts</h2>
+  <ul class="posts">
+    
+      <li><span>28 May 2016</span> <span class="seperator">~</span> <a href="/2016/05/28/jekyll-and-responsive-flickr-photos/">Jekyll and responsive Flickr photos</a></li>
+    
+      <li><span>23 Sep 2015</span> <span class="seperator">~</span> <a href="/2015/09/23/nginx-sso-Simple-offline-SSO-for-nginx/">nginx-sso - Simple offline SSO for nginx</a></li>
+    
+      <li><span>20 Aug 2015</span> <span class="seperator">~</span> <a href="/2015/08/20/Persistent-AppCache-Injections/">Persistent AppCache Injections</a></li>
+    
+  </ul>
+</div>
+
+-->
+<div class="comments">
+	<h3>Comments</h3>
+        <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'heipei'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    
+
+</div>
+
+            <div class="footer">
+                <div class="contact">
+                    <p>Johannes Gilger - <a href="https://twitter.com/heipei/">@heipei</a></p>
+                </div>
+                <div class="rss">
+                    <i class="icon-rss"></i> <a href="/atom.xml">Atom Feed</a>
+                </div>
+            </div>
+        </div>
+    </body>
+    <html>

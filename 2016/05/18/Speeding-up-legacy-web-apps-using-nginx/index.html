@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en-gb">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>Revitalizing web applications using nginx</title>
+        <meta name="author" content="Johannes Gilger" />
+        <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+        <link rel="stylesheet" href="/css/syntax.css" type="text/css" media="all" />
+        <link rel="stylesheet" href="/css/screen.css" type="text/css" media="all" />
+        <link rel="canonical" href="https://heipei.github.io/2016/05/18/Speeding-up-legacy-web-apps-using-nginx/" />
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+             (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+             })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-40830475-1', 'github.io');
+            ga('send', 'pageview');
+        </script>
+    </head>
+    <body>
+        <div class="header">
+            <div class="site">
+                <div class="title"><a href="/">Johannes 'heipei' Gilger</a><div class="block1"></div><div class="block2"></div><div class="block3"></div></div>
+            </div>
+        </div>
+        <div class="site">
+            <div id="post">
+	<h1>Revitalizing web applications using nginx</h1>
+	<p class="meta">18 May 2016</p>
+	<h1 id="introduction">Introduction</h1>
+
+<p>The nginx web server keeps impressing me whenever I employ for both my
+professional and personal projects. It’s outstanding performance, simple
+configuration, and rich feature set make using it a no-brainer. Most people
+might only view a webserver as a piece of software which delivers static
+resources (images, stylesheets, HTML and JavaScript files), nginx also excels
+in other roles. My post on <a href="/2015/09/23/nginx-sso-Simple-offline-SSO-for-nginx/">nginx-sso</a>, a simple Single-Sign-On
+solution for nginx shows some of nginx’s advanced features in action.</p>
+
+<p>This post is about the awesome wealth of proxying functionality that nginx
+offers and how it can actually improve the performance and prolong the life of
+existing web applications without a lot of effort. In our case we’ll see that
+the old saying about not being able to polish a turd does not hold true when
+talking about legacy web applications.</p>
+
+<h1 id="outline">Outline</h1>
+<ul>
+  <li><a href="#introduction">Introduction</a> - Different types of SSO designs</li>
+</ul>
+
+<p><a name="introduction" class="anchor"></a></p>
+
+<h1 id="the-premise-a-slow-web-application">The premise: A slow web application</h1>
+
+<p>Let’s figure out a good candidate for a slow web application we could tackle.
+Before we start, we have to understand what <em>slow</em> actually means. Depending on
+the software at hand there is not a whole lot that nginx (or any other
+software) can do, and the only solution to improve the performance of the
+application is to actually rewrite the code. HTTP API endpoints come to
+mind. If your API takes a second processing results before it can send out a
+reply, you should spend time optimizing your application first.</p>
+
+<p>But that’s not really what a web application is. A web application is a
+complete set of functionality and resources. Rendered HTML, JavaScript files,
+stylesheets, images, fonts, and, yes, API endpoints. Think of software like a
+Wiki, an issue tracker, a git frontend, a message board, and pretty much any
+commercial software that exposes a web interface. It’s the kind of software
+that you have to use daily, yet do not have the resources or access to modify
+it if it’s too slow. It might run in a VM, a Docker container or even on a
+locked-down appliance.</p>
+
+<p><img src="/images/revitalizing_graph.png" alt="A common website" title="hpfriends shares" />
+<br /><small>“Yeah, that’s more than one request!”</small></p>
+
+<p>The reason this kind of software runs slowly can be manifold. Often the reason
+is simply that deployment was not a priority or that the software was in fact
+deployed incorrectly, and now you’re stuck with the equivalent of a development
+web server which has to handle all of the requests, including static resources.
+To make matters worse, the box this software lives on is half a world away from
+you in terms of latency. A request typically takes tens to hundreds of
+milliseconds.</p>
+
+<h1 id="prerequisites-for-proxying-via-nginx">Prerequisites for proxying via nginx</h1>
+
+<p>For the techniques in this post to work, we need to make sure that the
+following conditions are met:</p>
+
+<ul>
+  <li>You have a server which can be reached by your users and which can reach the
+original web app.</li>
+  <li>Your server is positioned such that is does not introduce a lot of additional
+latency between the user and the original web app. As a bonus, the server is
+positioned a lot closer to the user than the original web app.</li>
+  <li>You can get a domain name and a TLS cert for this server. We’ll need this for
+HTTP/2.</li>
+</ul>
+
+<p>These things might be easy to ensure if you’re talking about the Internet, but
+on a strictly controlled corporate network things might look different.</p>
+
+<h1 id="tackling-performance-tools-at-our-disposal">Tackling performance: Tools at our disposal</h1>
+
+<p>If you follow web developers at major players (like Google) you notice that a
+significant portion of their development effort and education is spent on
+improving web performance. As far as the transmission layer is concerned, the
+HTTP/2 standard has certainly been the biggest step forward. For us, this will
+be the easiest win in terms of web performance.
+<!-- FIXME: Rewrite --></p>
+
+<p>This is a list of things we’re going to try:</p>
+
+<ul>
+  <li>Deploying HTTP/2 across the board</li>
+  <li>Using TLS session caching</li>
+  <li>Deploying TLS best practices</li>
+  <li>Setting caching headers for static resources</li>
+  <li>Using proxy caching</li>
+  <li>Leveraging keepalive and proxy-keepalive</li>
+  <li>Replacing content during proxying</li>
+  <li>Replacing headers during proxying</li>
+  <li>Rewriting client and server headers</li>
+  <li>Tuning proxy buffering</li>
+  <li>Setting custom security headers</li>
+</ul>
+
+<h1 id="show-and-tell-faznet">Show and tell: faz.net</h1>
+
+</div>
+<!--
+
+<div id="related">
+  <h2>Related Posts</h2>
+  <ul class="posts">
+    
+      <li><span>28 May 2016</span> <span class="seperator">~</span> <a href="/2016/05/28/jekyll-and-responsive-flickr-photos/">Jekyll and responsive Flickr photos</a></li>
+    
+      <li><span>23 Sep 2015</span> <span class="seperator">~</span> <a href="/2015/09/23/nginx-sso-Simple-offline-SSO-for-nginx/">nginx-sso - Simple offline SSO for nginx</a></li>
+    
+      <li><span>20 Aug 2015</span> <span class="seperator">~</span> <a href="/2015/08/20/Persistent-AppCache-Injections/">Persistent AppCache Injections</a></li>
+    
+  </ul>
+</div>
+
+-->
+<div class="comments">
+	<h3>Comments</h3>
+        <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'heipei'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    
+
+</div>
+
+            <div class="footer">
+                <div class="contact">
+                    <p>Johannes Gilger - <a href="https://twitter.com/heipei/">@heipei</a></p>
+                </div>
+                <div class="rss">
+                    <i class="icon-rss"></i> <a href="/atom.xml">Atom Feed</a>
+                </div>
+            </div>
+        </div>
+    </body>
+    <html>

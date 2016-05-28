@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en-gb">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>Jekyll and responsive Flickr photos</title>
+        <meta name="author" content="Johannes Gilger" />
+        <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+        <link rel="stylesheet" href="/css/syntax.css" type="text/css" media="all" />
+        <link rel="stylesheet" href="/css/screen.css" type="text/css" media="all" />
+        <link rel="canonical" href="https://heipei.github.io/2016/05/28/jekyll-flickr-speed/" />
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+             (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+             })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-40830475-1', 'github.io');
+            ga('send', 'pageview');
+        </script>
+    </head>
+    <body>
+        <div class="header">
+            <div class="site">
+                <div class="title"><a href="/">Johannes 'heipei' Gilger</a><div class="block1"></div><div class="block2"></div><div class="block3"></div></div>
+            </div>
+        </div>
+        <div class="site">
+            <div id="post">
+	<h1>Jekyll and responsive Flickr photos</h1>
+	<p class="meta">28 May 2016</p>
+	<h1 id="introduction">Introduction</h1>
+
+<p>My personal blog over at <a href="https://heipei.net">heipei.net</a> is a little different than this one. Rather than text- and
+code-heavy content, it is mostly photos with some text in between. I’ve already spent countless hours optimizing every
+performance aspect of the site, sometimes including brand-new directives such as preconnect hints. But at some point
+there is no way around the fact that the blog contains a lot of high-fidelity images from Flickr, a site that is known
+to not compress it’s photos aggresively, which is a good thing for photographers.</p>
+
+<p>So the only way to improve the perceived performance is to load photos only when they are needed, i.e. when they’re
+about to become visible. This is known as <em>lazy-loading</em> and can be accomplished quite easily using a variety of
+JavaScript libraries. I combined lazy-loading with a simple mechanism for responsivesness to make it work better for my
+use case. This will certainly not fit all applications, but should give you an idea just how easy it is do implement
+something like this yourself.</p>
+
+<h1 id="getting-flickr-photo-urls">Getting flickr photo URLs</h1>
+
+<p>Flickr used to have a more generic <em>Share</em> dialog. Unfortunately, nowadays they only offer an intrusive JavaScript-based
+snippet for embedding photos in your website. It works well enough, but neither do I need it nor do I want additional
+JavaScript on my site. The way I go about this is to copy the <em>Embed</em> URL and transform it in my paste-buffer:</p>
+
+<figure class="highlight"><pre><code class="language-html" data-lang="html"><span class="nt">&lt;a</span> <span class="na">data-flickr-embed=</span><span class="s">&quot;true&quot;</span>  <span class="na">href=</span><span class="s">&quot;https://www.flickr.com/photos/heipei/26979354391/in/photostream&quot;</span> <span class="na">title=</span><span class="s">&quot;Wanderung</span>
+<span class="s">Grenzroute 2&quot;</span><span class="nt">&gt;&lt;img</span> <span class="na">src=</span><span class="s">&quot;https://c8.staticflickr.com/8/7245/26979354391_54884d1976_b.jpg&quot;</span> <span class="na">width=</span><span class="s">&quot;1024&quot;</span> <span class="na">height=</span><span class="s">&quot;683&quot;</span>
+<span class="na">alt=</span><span class="s">&quot;Wanderung Grenzroute 2&quot;</span><span class="nt">&gt;&lt;/a&gt;&lt;script </span><span class="na">async</span> <span class="na">src=</span><span class="s">&quot;//embedr.flickr.com/assets/client-code.js&quot;</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;&lt;/script&gt;</span></code></pre></figure>
+
+<p>Transformed via:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">pbpaste<span class="p">|</span>sed -e <span class="s2">&quot;s/data-.*  href/href/&quot;</span> -e <span class="s2">&quot;s/\/in\/dateposted-public//&quot;</span> -e <span class="s2">&quot;s/width.*alt/alt/&quot;</span> -e
+<span class="s2">&quot;s/&lt;script.*script&gt;//&quot;</span><span class="p">|</span>pbcopy</code></pre></figure>
+
+<p>which gives me:</p>
+
+<figure class="highlight"><pre><code class="language-html" data-lang="html"><span class="nt">&lt;a</span> <span class="na">href=</span><span class="s">&quot;https://www.flickr.com/photos/heipei/26979354391/in/photostream&quot;</span> <span class="na">title=</span><span class="s">&quot;Wanderung Grenzroute 2&quot;</span><span class="nt">&gt;&lt;img</span>
+<span class="na">src=</span><span class="s">&quot;https://c8.staticflickr.com/8/7245/26979354391_54884d1976_b.jpg&quot;</span> <span class="na">alt=</span><span class="s">&quot;Wanderung Grenzroute 2&quot;</span><span class="nt">&gt;&lt;/a&gt;</span></code></pre></figure>
+
+<p>This is the format I use in my Jekyll blog-posts. I get rid of <code>width</code> and <code>height</code> as well since I might always change
+the dimensions of this blog in the future.</p>
+
+<h1 id="lazy-loading">Lazy loading</h1>
+
+<p>For lazy-loading, I used the <a href="https://github.com/toddmotto/echo">echo.js library</a>, though I suppose that any similar
+library would do. The way that echo.js works is by not setting the <code>src</code> attribute of the image but rather setting the
+URL of the image in the <code>data-echo</code> attribute. Then, at runtime, the echo.js library can set the <code>src</code> attribute just in
+time when the viewer is about to scroll to the image.</p>
+
+<figure class="highlight"><pre><code class="language-html" data-lang="html"><span class="nt">&lt;img</span> <span class="na">src=</span><span class="s">&quot;loading.gif&quot;</span> <span class="na">data-echo=</span><span class="s">&quot;https://flickr.com/photo.jpg&quot;</span><span class="nt">&gt;</span></code></pre></figure>
+
+<p>I’ve used a variety of these libraries over the lifetime of my blog, so whenever I switched to a new one I would have to
+go back and edit the image tags of all old post to accomodate the new way the library would do lazy loading. Quite
+painful. Since I’m using Jekyll now I’ve simply included a preprocessing step for image tags. In <code>_layouts/post.html</code>
+I’m using</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="p">{{</span> <span class="n">content</span> <span class="o">|</span> <span class="ss">replace_regex</span><span class="p">:</span> <span class="s1">&#39;img src=&#39;</span><span class="p">,</span> <span class="s1">&#39;img src=&quot;/images/ajax.gif&quot; data-echo=&#39;</span> <span class="p">}}</span></code></pre></figure>
+
+<p>Which will transform regular image tags like</p>
+
+<figure class="highlight"><pre><code class="language-html" data-lang="html"><span class="nt">&lt;img</span> <span class="na">src=</span><span class="s">&quot;https://c8.staticflickr.com/8/7245/26979354391_54884d1976_b.jpg&quot;</span> <span class="na">alt=</span><span class="s">&quot;Wanderung Grenzroute 2&quot;</span><span class="nt">&gt;</span></code></pre></figure>
+
+<p>into this HTML for the output:</p>
+
+<figure class="highlight"><pre><code class="language-html" data-lang="html"><span class="nt">&lt;img</span> <span class="na">src=</span><span class="s">&quot;/images/ajax.gif&quot;</span> <span class="na">data-echo=</span><span class="s">&quot;https://c8.staticflickr.com/8/7245/26979354391_54884d1976_b.jpg&quot;</span> <span class="na">alt=</span><span class="s">&quot;Wanderung Grenzroute 2&quot;</span> <span class="nt">/&gt;</span></code></pre></figure>
+
+<p>The beauty of using the Jekyll processing step is that I can turn echo.js of at
+any moment if I no longer want to use it.</p>
+
+<h1 id="responsive-flickr-images">Responsive flickr images</h1>
+
+<p>Lazy loading already works wonders for page-load speed on any device. The other big issue that I faced was the enormous
+size of flickr photos. For landscape-photos, I include the <em>large</em> size, which is 1024px wide. For my latest post, just
+<a href="https://c8.staticflickr.com/8/7245/26979354391_54884d1976_b.jpg">the first photo</a> is a whopping 362kB of incompressible
+JPG data. The next smaller size, called <em>medium</em> at 800px wide, is 250kB in size, already a big improvement. For small
+devices (say 480px wide), I can get away with the <em>medium</em> size at 500px wide at about 100kB, a three-fold improvement.</p>
+
+<p>Flickr offers photos in a variety of pre-defined sizes, <a href="https://www.flickr.com/services/api/misc.urls.html">indicated by the filename
+suffix</a>. This makes it straightforward to replace images with a
+simple substitute. I thought about it a little bit, and came up with this simple workflow:</p>
+
+<ul>
+  <li>Images are included in the page in their biggest size, using the <code>data-echo</code> attribute</li>
+  <li>If an image has width/height set, those settings will be removed</li>
+  <li>I will only downsize images that have not been loaded yet</li>
+  <li>I will upsize images that have already been loaded, if the size of the viewport changes</li>
+  <li>I’m replacing <em>large</em> (1024px) images with <em>medium</em> (500px) images (360kB to 100kB for our example)</li>
+  <li>I’m replacing <em>medium</em> (800px) images with <em>small</em> (320px) images (250kB to 37kB for our example)</li>
+</ul>
+
+<p>Comparing a desktop load and a simulated Nexus 5x load of my most recent blog post:</p>
+
+<p><img src="/images/jekyll-flickr-native.png" alt="Desktop load" title="Desktop load" />
+<br /><small>Desktop load</small></p>
+
+<p><img src="/images/jekyll-flickr-mobile.png" alt="Mobile load" title="Mobile load" />
+<br /><small>Mobile load (Nexus 5x)</small></p>
+
+<p>This is the simple Coffeescript-code to achieve just that</p>
+
+<figure class="highlight"><pre><code class="language-coffee" data-lang="coffee"><span class="nb">document</span><span class="p">.</span><span class="nx">addEventListener</span><span class="p">(</span> <span class="s">&quot;DOMContentLoaded&quot;</span><span class="p">,</span> <span class="nf">() -&gt;</span>
+
+  <span class="nv">resize_flickr_images = </span><span class="nf">(size=&quot;small&quot;) -&gt;</span>
+    <span class="nv">imgs = </span><span class="nb">document</span><span class="p">.</span><span class="nx">querySelectorAll</span><span class="p">(</span><span class="s">&quot;img&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="nx">img</span> <span class="k">in</span> <span class="nx">imgs</span>
+      <span class="k">for</span> <span class="nx">attrib</span> <span class="k">in</span> <span class="p">[</span><span class="s">&quot;data-echo&quot;</span><span class="p">,</span> <span class="s">&quot;src&quot;</span><span class="p">]</span>
+        <span class="nv">original_url = url = </span><span class="nx">img</span><span class="p">.</span><span class="nx">getAttribute</span><span class="p">(</span><span class="nx">attrib</span><span class="p">)</span>
+        <span class="k">continue</span> <span class="k">unless</span> <span class="nx">url</span><span class="o">?</span>
+
+        <span class="c1"># Remove width/height for all flickr images</span>
+        <span class="k">if</span> <span class="nx">url</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="s">&quot;https://.*\.static\.?flickr.com/.*&quot;</span><span class="p">)</span>
+          <span class="nx">img</span><span class="p">.</span><span class="nx">removeAttribute</span><span class="p">(</span><span class="s">&quot;width&quot;</span><span class="p">)</span>
+          <span class="nx">img</span><span class="p">.</span><span class="nx">removeAttribute</span><span class="p">(</span><span class="s">&quot;height&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Only downsize images if they haven&#39;t been loaded yet (data-echo)</span>
+        <span class="k">if</span> <span class="nx">size</span> <span class="o">is</span> <span class="s">&quot;small&quot;</span> <span class="o">and</span> <span class="nx">attrib</span> <span class="o">is</span> <span class="s">&quot;data-echo&quot;</span>
+          <span class="k">if</span> <span class="nx">url</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="s">&quot;https://.*\.static\.?flickr.com/.*_b.jpg&quot;</span><span class="p">)</span>
+            <span class="nv">url = </span><span class="nx">url</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="s">&quot;_b.jpg&quot;</span><span class="p">,</span> <span class="s">&quot;.jpg&quot;</span><span class="p">)</span> 
+          <span class="k">else</span> <span class="k">if</span> <span class="nx">url</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="s">&quot;https://.*\.static\.?flickr.com/.*_c.jpg&quot;</span><span class="p">)</span>
+            <span class="nv">url = </span><span class="nx">url</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="s">&quot;_c.jpg&quot;</span><span class="p">,</span> <span class="s">&quot;_n.jpg&quot;</span><span class="p">)</span> 
+        
+        <span class="c1"># Always upsize flickr images</span>
+        <span class="k">if</span> <span class="nx">size</span> <span class="o">is</span> <span class="s">&quot;large&quot;</span>
+          <span class="k">if</span> <span class="nx">url</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="s">&quot;https://.*\.static\.?flickr.com/.*_n.jpg&quot;</span><span class="p">)</span>
+            <span class="nv">url = </span><span class="nx">url</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="s">&quot;_n.jpg&quot;</span><span class="p">,</span> <span class="s">&quot;_c.jpg&quot;</span><span class="p">)</span> 
+          <span class="k">else</span> <span class="k">if</span> <span class="nx">url</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="s">&quot;https://.*\.static\.?flickr.com/.*_m.jpg&quot;</span><span class="p">)</span>
+            <span class="nv">url = </span><span class="nx">url</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="s">&quot;_m.jpg&quot;</span><span class="p">,</span> <span class="s">&quot;_n.jpg&quot;</span><span class="p">)</span> 
+          <span class="k">else</span> <span class="k">if</span> <span class="nx">url</span><span class="p">.</span><span class="nx">match</span><span class="p">(</span><span class="s">&quot;https://.*\.static\.?flickr.com/.*/[a-f0-9]{3,}_[a-f0-9]{3,}.jpg&quot;</span><span class="p">)</span>
+            <span class="nv">url = </span><span class="nx">url</span><span class="p">.</span><span class="nx">replace</span><span class="p">(</span><span class="s">&quot;.jpg&quot;</span><span class="p">,</span> <span class="s">&quot;_b.jpg&quot;</span><span class="p">)</span> 
+
+        <span class="k">if</span> <span class="nx">original_url</span> <span class="o">isnt</span> <span class="nx">url</span>
+          <span class="nx">img</span><span class="p">.</span><span class="nx">setAttribute</span><span class="p">(</span><span class="nx">attrib</span><span class="p">,</span> <span class="nx">url</span><span class="p">)</span>
+
+  <span class="nv">WidthChange = </span><span class="nf">(mq) -&gt;</span>
+    <span class="k">if</span> <span class="nx">mq</span><span class="p">.</span><span class="nx">matches</span>
+      <span class="nx">resize_flickr_images</span><span class="p">(</span><span class="s">&quot;small&quot;</span><span class="p">)</span>
+    <span class="k">else</span>
+      <span class="nx">resize_flickr_images</span><span class="p">(</span><span class="s">&quot;large&quot;</span><span class="p">)</span>
+    <span class="k">return</span>
+
+  <span class="k">if</span> <span class="nx">matchMedia</span>
+    <span class="nv">mq = </span><span class="nb">window</span><span class="p">.</span><span class="nx">matchMedia</span><span class="p">(</span><span class="s">&#39;(max-width: 480px)&#39;</span><span class="p">)</span>
+    <span class="nx">mq</span><span class="p">.</span><span class="nx">addListener</span> <span class="nx">WidthChange</span>
+    <span class="nx">WidthChange</span> <span class="nx">mq</span>
+
+  <span class="c1"># Init echo.js lazy loading</span>
+  <span class="nx">echo</span><span class="p">.</span><span class="nx">init</span>
+      <span class="nv">offset: </span><span class="mi">400</span><span class="p">,</span>
+      <span class="nv">throttle: </span><span class="mi">150</span><span class="p">,</span>
+      <span class="nv">unload: </span><span class="kc">false</span>
+
+<span class="p">)</span></code></pre></figure>
+
+<h1 id="todo">TODO</h1>
+
+<p>This is still a very crude and not quite generic way to resize flickr photos. I imagine this could be done in a more
+generic fashion, e.g. as a small JavaScript library that can be included into pages to make any included flickr photos
+more responsive. But, as you can tell from the code above, the time spent searching for a library which does exactly
+what you need and does not interfere with the rest of your page usually takes longer than simply writing a few lines of
+JavaScript or CoffeeScript yourself.</p>
+
+</div>
+<!--
+
+<div id="related">
+  <h2>Related Posts</h2>
+  <ul class="posts">
+    
+      <li><span>18 May 2016</span> <span class="seperator">~</span> <a href="/2016/05/18/Speeding-up-legacy-web-apps-using-nginx/">Revitalizing web applications using nginx</a></li>
+    
+      <li><span>23 Sep 2015</span> <span class="seperator">~</span> <a href="/2015/09/23/nginx-sso-Simple-offline-SSO-for-nginx/">nginx-sso - Simple offline SSO for nginx</a></li>
+    
+      <li><span>20 Aug 2015</span> <span class="seperator">~</span> <a href="/2015/08/20/Persistent-AppCache-Injections/">Persistent AppCache Injections</a></li>
+    
+  </ul>
+</div>
+
+-->
+<div class="comments">
+	<h3>Comments</h3>
+        <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'heipei'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    
+
+</div>
+
+            <div class="footer">
+                <div class="contact">
+                    <p>Johannes Gilger - <a href="https://twitter.com/heipei/">@heipei</a></p>
+                </div>
+                <div class="rss">
+                    <i class="icon-rss"></i> <a href="/atom.xml">Atom Feed</a>
+                </div>
+            </div>
+        </div>
+    </body>
+    <html>

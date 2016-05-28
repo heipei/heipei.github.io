@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en-gb">
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>Persistent AppCache Injections</title>
+        <meta name="author" content="Johannes Gilger" />
+        <link rel="alternate" type="application/atom+xml" href="/atom.xml" title="Atom feed">
+        <link rel="stylesheet" href="/css/syntax.css" type="text/css" media="all" />
+        <link rel="stylesheet" href="/css/screen.css" type="text/css" media="all" />
+        <link rel="canonical" href="https://heipei.github.io/2015/08/20/Persistent-AppCache-Injections/" />
+        <script>
+            (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+             (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+             m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+             })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+            ga('create', 'UA-40830475-1', 'github.io');
+            ga('send', 'pageview');
+        </script>
+    </head>
+    <body>
+        <div class="header">
+            <div class="site">
+                <div class="title"><a href="/">Johannes 'heipei' Gilger</a><div class="block1"></div><div class="block2"></div><div class="block3"></div></div>
+            </div>
+        </div>
+        <div class="site">
+            <div id="post">
+	<h1>Persistent AppCache Injections</h1>
+	<p class="meta">20 Aug 2015</p>
+	<p><strong>tl;dr</strong>: Make plain-HTTP MiTM attacks persistent by leveraging the HTML5
+AppCache offline functionality. Result: Persistent JavaScript running on the
+target browser whenever he visits previously injected websites, will not be
+cleared by reload. Can also be used as an intrusion-less persistent Strategic
+Web Compromise (SWC) to facilitate reconnaisance and exploitation of selected
+targets over time. The actual attack does <em>not</em> rely on caching and is
+described in <a href="#attack">attack</a>.</p>
+
+<ul>
+  <li><a href="https://www.reddit.com/r/netsec/comments/3h8bbj/html5_persistent_appcache_injections/">r/netsec thread</a></li>
+  <li><a href="https://news.ycombinator.com/item?id=10070009">Hackernews thread</a></li>
+</ul>
+
+<h1 id="outline">Outline</h1>
+<ul>
+  <li><a href="#introduction">Introduction</a> - What made me research this attack</li>
+  <li><a href="#caching">First thought: Caching</a> - How would you do it via Caching</li>
+  <li><a href="#appcache">Next idea: AppCache</a> - Employing HTML5 AppCache</li>
+  <li><a href="#update">AppCache manifest update behaviour</a> - A closer look</li>
+  <li><a href="#attack">The attack: <strong>Persistent AppCache Injection</strong></a> - Steps to perform the actual attack</li>
+  <li><a href="#persistence">Examining the persistence</a> - How hard is it to get rid of the AppCache?</li>
+  <li><a href="#scenarios">Attack scenarios</a> - Where could this attack be employed?</li>
+  <li><a href="#countermeasures">Countermeasures</a> - What can you do to protect against this attack?</li>
+  <li><a href="#references">References</a> - URLs for further reading</li>
+  <li><a href="#updates">Updates</a> - What I found out after finishing this blog-post :(</li>
+</ul>
+
+<p><a name="introduction" class="anchor"></a></p>
+
+<h1 id="introduction">Introduction</h1>
+
+<p>Earlier this month a colleague and I gave a talk at <a href="https://www.blackhat.com/us-15/briefings.html#bringing-a-cannon-to-a-knife-fight">BlackHat USA about the
+Great Cannon of
+China</a>.
+If you don’t know what the Great Cannon is capable of, I suggest reading the
+<a href="https://citizenlab.org/2015/04/chinas-great-cannon/">excellent technical analysis by the Citizen
+Lab</a>. The bottom-line is
+that the Great Cannon is a nation-level Man-in-the-Middle tool that the Chinese
+administration can employ against plain connections going to/from China. With
+that tool in hand, they were able to replace ad-related JavaScript hosted on
+baidu.com with a malicious piece of JavaScript that would do an XHR request to
+GreatFire.org as well as Github.com, thereby creating a browser-based DDoS
+attack that international visitors of Baidu participated in.</p>
+
+<p>While doing my research over the last months, I tried to come up with
+worst-case scenarios and payloads that could be employed against plain HTTP
+connections this way. Right from the start it had been evident that the Great
+Cannon could also be used to target individual users and organizations. The
+selectors for this targeting could be plain IP addresses or other user traits
+submitted via plain HTTP. HTTP injection is noisy however, especially since it
+has to be performed constantly against a user. For the Great Cannon this might
+be possible, but for an attacker trying to MiTM your HTTP connection, this is
+frequently not the case.</p>
+
+<p>I realized that the scariest way to achieve this goal is by somehow
+<em>persisting</em> in the target browser after the injections have stopped. This way
+you could track users over extended periods of time, either as part of a
+botnet, to collect information, or to wait for the day that their browser or
+plugins are vulnerable to a remote-code-execution bug for a short period of
+time.</p>
+
+<p><a name="caching" class="anchor"></a></p>
+
+<h1 id="first-thought-caching">First thought: Caching</h1>
+
+<p>When thinking of persistence and HTTP, browser caching is the first thing that
+comes to mind. You could supply injected content along with custom caching
+headers which have a long cache duration. This will actually work reasonably
+well, but suffers from a couple of drawbacks:</p>
+
+<ul>
+  <li>If you inject single JS files, there is no telling whether the URL for these
+changes (e.g. asset management URLs).</li>
+  <li>If you inject some HTML resource, the user might notice that the website on
+his system seems out of date and force a refresh.</li>
+  <li>In any case, as soon as the website starts behaving erratically, users are
+likely to manually refresh the websites, thereby clearing the caches and your
+precious payload.</li>
+</ul>
+
+<p>The caching behaviour of different browsers is a complicated topic that I’m not
+gonna get into here. Suffice to say, major browsers nowadays offer easy ways of
+clearing the cache or hard-reloading a page.</p>
+
+<p><a name="appcache" class="anchor"></a></p>
+
+<h1 id="next-idea-appcache">Next idea: AppCache</h1>
+
+<p>My next idea was to go with the HTML5 Application Cache, aka the “offline
+website” functionality. You might have seen that in action when you used Google
+Docs and went offline: The web application is still available and fully
+usable.</p>
+
+<p>The way that the AppCache works is by specifying a manifest file in the HTML
+header that tells the browser to download all of the files in the manifest and
+use them whenever the browser is determined to be offline. You can then make a
+website appear to be offline by DoSing either or cookie-bombing the user so the
+website appears to be offline. Both approaches make the actual website
+unreachable, which we want to avoid for obvious reasons.</p>
+
+<p>Interestingly, the files in the AppCache are used even when the browser is
+online. In this case, the only thing the browser does is to check whether the
+manifest file changed. If it hasn’t it will happily keep using the offline
+files.</p>
+
+<p>The obvious approach would be to inject a forged HTML, manifest and
+corresponding cache headers. Apparently, the cache headers are also applied to
+the manifest file. This is exactly what <a href="http://sakurity.com/blog/2015/08/13/middlekit.html">Egor
+Homakov</a> did in his post on
+the Application Cache. But this approach suffers from the same drawbacks that
+pure cache-based attacks to: It can easily be circumvented by clearing the
+cache or hitting hard-refresh. For Safari, this will not work at all, since it
+will always check the manifest even if it had a long cache expiry time.</p>
+
+<p><a name="update" class="anchor"></a></p>
+
+<h1 id="appcache-manifest-update-behaviour">AppCache manifest update behaviour</h1>
+
+<p>I started looking at the <a href="http://www.w3.org/html/wg/drafts/html/master/browsers.html#offline">HTML5
+spec</a> and
+playing around with the Application cache. When you reload a page, the browser
+will try to get the manifest to see if it changed. If the manifest file is gone
+(HTTP 404 or 410), then the whole Application Cache will be cleared. This would
+defeat our one-time injection.</p>
+
+<p>What caught my eye was this piece section:</p>
+
+<blockquote>
+  <p>Otherwise, if fetching the manifest fails in some other way (e.g. the server
+returns another 4xx or 5xx response or equivalent, or there is a DNS error,
+or the connection times out, or the user cancels the download, or the parser
+for manifests fails when checking the magic signature), or if the server
+returned a redirect, or if the resource is labeled with a MIME type other
+than text/cache-manifest, then run the cache failure steps.
+<br /><small><b><a href="http://www.w3.org/html/wg/drafts/html/master/browsers.html#downloading-or-updating-an-application-cache">W3C HTML5 spec</a></b></small></p>
+</blockquote>
+
+<p>The cache failure steps finish with this step: <em>“Abort the application cache
+download process.”</em> To spell it out: The Application cache will stay intact if
+some part of updating it fails this way. The reasoning behind this is that the
+user might be behind some sort of captive portal (hence the 302), which
+effectively means “offline”. The same logic is true for return codes like
+500 (“The server might be down”) or 200.</p>
+
+<p>I only noticed the <em>“Security Concerns”</em> section in the draft spec after I had
+already come up with my attack.  It addresses a very similar attack, but still
+does not quite apply to what we have in mind.</p>
+
+<blockquote>
+  <p>[…] an injection attack can be elevated into persistent site-wide page
+replacement. […] Targetted denial-of-service attacks or cookie bombing
+attacks can be used to ensure that the site appears offline. […] If a site
+has been attacked in this way, simply removing the offending manifest might
+eventually clear the problem, since the next time the manifest is updated, a
+404 error will be seen, and the user agent will clear the cache. […]
+Unfortunately, if a cookie bombing attack has also been used, merely removing
+the manifest is insufficient; in addition, the server has to be configured to
+return a 404 or 410 response instead of the 413 “Request Entity Too Large”
+response.
+<br /><small><b><a href="http://www.w3.org/html/wg/drafts/html/master/browsers.html#downloading-or-updating-an-application-cache">W3C HTML5 spec</a></b></small></p>
+</blockquote>
+
+<p><a name="attack" class="anchor"></a></p>
+
+<h1 id="putting-everything-together-persistent-appcache-injection">Putting everything together: Persistent AppCache Injection</h1>
+
+<p>Now for the actual attack. Let’s take a step back and see what we’ve got:</p>
+
+<ul>
+  <li>We can’t upload our own manifest to the server.</li>
+  <li>We can’t inject a response for every request to the manifest.</li>
+  <li>We can’t / won’t DDoS or cookie-bomb the server.</li>
+  <li>The manifest has to live in the same origin as the website.</li>
+  <li>The AppCache <strong>will</strong> be deleted if the request for the manifest returns 404 or 410.</li>
+  <li>The AppCache <strong>will not</strong> be deleted if the manifest returns some other error code or redirect.</li>
+  <li>The AppCache <strong>will not</strong> be deleted if the manifest returns 200 but with the wrong MIME type.</li>
+  <li><strong>No</strong> current browser will prompt or show any indication when creating an AppCache.</li>
+</ul>
+
+<p>In order to achieve our intended persistence, we need to inject the manifest on
+a path that will generate a non-404/410 response from the <strong>legitimate</strong>
+web-server! The path can be any sub-path, just make sure to deliver your fake
+manifest file with MIME-type <code>text/cache-manifest</code>.</p>
+
+<ul>
+  <li>Inject resource you want to persist (e.g. /index.html or just /).</li>
+  <li>In injected resource, point to your own to-be-injected manifest via <code>&lt;html manifest="/foo/bar/"&gt;</code>.</li>
+  <li>Make sure that the URL for fake manifest always returns non-404/410 from the legitimate website.</li>
+  <li>Additionally, place JavaScript payload in the injected resource (stealthier).</li>
+  <li>The manifest should include the resource, itself, and whatever else you need.</li>
+  <li>Do the injection once.</li>
+</ul>
+
+<p>The injected HTML at /:</p>
+
+<figure class="highlight"><pre><code class="language-html" data-lang="html"><span class="nt">&lt;html</span> <span class="na">manifest=</span><span class="s">&quot;/foo/bar/&quot;</span><span class="nt">&gt;</span>
+    <span class="nt">&lt;head&gt;&lt;title&gt;</span>Malicious Website<span class="nt">&lt;/title&gt;&lt;/head&gt;</span>
+    [...]</code></pre></figure>
+
+<p>The injected manifest file at <code>/foo/bar/</code>:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">CACHE MANIFEST
+
+CACHE:
+/
+/foo/bar/</code></pre></figure>
+
+<p>Picking a non-404/410 URL might sound complicated, but it’s actually fairly
+simple: Pick any 302 or even 200 URL (as long as it does not reply with
+MIME-type <code>text/cache-manifest</code>.</p>
+
+<p><a name="persistence" class="anchor"></a></p>
+
+<h1 id="examining-the-persistence">Examining the persistence</h1>
+
+<p>This is where things get tricky. The question we want to answer is how
+persistent our injection really is. Remember that the AppCache functionality is
+supposed to work offline, so clearing the AppCache when the user hits
+<em>“Reload”</em> would defeat its purpose. Let’s have a look at each major browser:</p>
+
+<h2 id="google-chrome-44-stable-linux--mac-os-x">Google Chrome 44 (Stable) (Linux &amp; Mac OS X)</h2>
+
+<p>Google Chrome will <strong>not</strong> clear the AppCache or reload the original HTML when
+doing a refresh or hard-refresh (Ctrl-Shift-R). It <strong>will</strong> reload the original
+file when opening the Inspector and selecting <code>[x] Disable Cache</code>. Also, you
+can examine and clear AppCaches in chrome via the internal URL
+<code>chrome://appcache-internals/</code>.</p>
+
+<h2 id="mozilla-firefox-3811-esr-linux--mac-os-x">Mozilla Firefox 38.1.1 (ESR) (Linux &amp; Mac OS X)</h2>
+
+<p>Firefox will <strong>not</strong> clear the AppCache when doing a refresh or hard-refresh.
+The only way to clear the AppCache is to go to <em>Preferences</em> -&gt; <em>Advanced</em>
+-&gt; <em>Network</em> and clear the AppCache manually.</p>
+
+<h2 id="safari-807-mac-os-x">Safari 8.0.7 (Mac OS X)</h2>
+
+<p>Safari will <strong>not</strong> clear the AppCache on refresh or hard-refresh. On top of
+that, Safari will also <strong>not</strong> clear the AppCache even if you do <em>Develop</em> -&gt;
+<em>Empty Caches</em> and <em>Develop</em> -&gt; <em>Disable Caches</em>.</p>
+
+<p>Safari does not expose the AppCaches in a very visible fashion. The only way
+I’ve found to clear an AppCache is by going to <em>Preferences</em> -&gt; <em>Privacy</em> -&gt;
+<em>Remove All Website Data</em> (or search for websites).</p>
+
+<h2 id="opera-310-mac-os-x">Opera 31.0 (Mac OS X)</h2>
+
+<p>Opera will <strong>not</strong> clear the AppCache on refresh or hard-refresh (Shift+Refresh).
+Opera will clear the AppCache when hitting <em>Clear Browsing Data</em>.</p>
+
+<h2 id="internet-explorer-11-windows-7">Internet Explorer 11 (Windows 7)</h2>
+
+<p>Internet Explorer will <strong>not</strong> clear the AppCache on refresh or hard-refresh
+(Shift-Click). To clear it, you’ll have to go to <em>Internet Options</em> -&gt;
+<em>Settings</em> -&gt; <em>Caches and databases</em>.</p>
+
+<h2 id="comparison-to-homakov">Comparison to Homakov</h2>
+<p>Comparing the method to the Cache-Only attack of Homakov:</p>
+
+<p>Our method:</p>
+
+<table class="table table-borders">
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Chrome</th>
+      <th>Firefox</th>
+      <th>Safari</th>
+      <th>Opera</th>
+      <th>IE</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Reload / Browse</td>
+      <td>Persist</td>
+      <td>Persist</td>
+      <td>Persist</td>
+      <td>Persist</td>
+      <td>Persist</td>
+    </tr>
+    <tr>
+      <td>Hard-Reload</td>
+      <td>Persist</td>
+      <td>Persist</td>
+      <td>Persist</td>
+      <td>Persist</td>
+      <td>Persist</td>
+    </tr>
+    <tr>
+      <td>Cache disable</td>
+      <td>Clear</td>
+      <td>NA</td>
+      <td>Persist</td>
+      <td>NA</td>
+      <td>Clear</td>
+    </tr>
+    <tr>
+      <td>Preferences</td>
+      <td>Clear</td>
+      <td>Clear</td>
+      <td>Clear</td>
+      <td>Clear</td>
+      <td>Clear</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>Homakov:</p>
+
+<table class="table table-borders">
+  <thead>
+    <tr>
+      <th>Method</th>
+      <th>Chrome</th>
+      <th>Firefox</th>
+      <th>Safari</th>
+      <th>Opera</th>
+      <th>IE</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Reload / Browse</td>
+      <td>Persist</td>
+      <td>Persist</td>
+      <td>Persist once</td>
+      <td>Persist</td>
+      <td>Persist</td>
+    </tr>
+    <tr>
+      <td>Hard-Reload</td>
+      <td>Persist</td>
+      <td>Persist</td>
+      <td>Clear</td>
+      <td>Persist</td>
+      <td>Persist</td>
+    </tr>
+    <tr>
+      <td>Cache disable</td>
+      <td>Clear</td>
+      <td>NA</td>
+      <td>Clear</td>
+      <td>NA</td>
+      <td>Clear</td>
+    </tr>
+    <tr>
+      <td>Preferences</td>
+      <td>Clear</td>
+      <td>Clear</td>
+      <td>Clear</td>
+      <td>Clear</td>
+      <td>Clear</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>As I said, browser caching is a complex topic. Suffice to say, employing only
+caching is not sufficient since the browser might clear the cache without a lot
+of user interaction. For example, Safari will clear the cache if you hit the
+regular “Reload” twice in a row.</p>
+
+<!-- TODO: Table to compare against Homakov's attack -->
+
+<p><a name="scenarios" class="anchor"></a></p>
+
+<h1 id="attack-scenarios">Attack scenarios</h1>
+
+<p>There are a number of different scenarios where this attack can be used, ranging from stealthy to obvious.</p>
+
+<p>The Great Cannon (or any large in-path system) could be leveraged to do these
+kind of injections. This would have to be very targeted, as any large-scale
+injection will immediately be noticed. Additionally, if someone already
+controls a system such as the Great Cannon, he would not really have to do
+these kind of injections to stay “persistent”.</p>
+
+<p>Another scenario is much more dangerous: <strong>Local injections</strong>. If you’re going to a
+conference or browsing over a public hotel Wi-Fi, someone could MiTM you and
+thereby persist in your browser whenever you visit your favorite website.
+Personally, I browse a number of plain-only news websites which would be ripe
+targets as I go there daily and usually stay for a while to catch up on news.</p>
+
+<p>An even more devious kind of injection would work against <strong>internal websites</strong>
+that the target might visit. This could be your average Intranet page which IT
+never protected with HTTPS since <em>“it’s only reachable on the corporate
+network”</em> anyway. Usually, the target would not visit these websites in a
+remote location, but he might have had an open tab or simply didn’t notice that
+the VPN connection had died again. In any case, you can now inject his
+<strong>internal</strong> website and grab whatever data you want the next time he goes
+online in his corporate network/VPN environment. Scary? It should be!</p>
+
+<p>Both of these attacks could also be carried out without actually <em>injecting</em>
+the HTTP response. You could simply send a forged DNS reply to redirect the
+target to your AppCache-injection site once.</p>
+
+<p>Lastly, as I mentioned, this kind of persistence would be ideal for actors
+without nation-state capabilities to pull of targeted exploitation. Without
+access to a treasure trove of 0days, you’d have to be lucky to catch your
+target in the narrow time-frame that he is exploitable. With a persistent
+injection, you could simply wait until there is yet another Flash/Java RCE 0day
+and exploit the user in this very instant.</p>
+
+<p>Not really an injection, but this attack could just as well be mounted by an
+attacker who compromises the legitimate webserver and wants to persist even
+after his attack payload is cleaned from the server. In this case, the benign
+website could at least detect the injection and make sure it returns 404 for
+the fake manifest URL.</p>
+
+<p><a name="countermeasures" class="anchor"></a></p>
+
+<h1 id="countermeasures">Countermeasures</h1>
+
+<p>To prevent this attack from taking place in the first place, one should employ
+<strong>HTTPS along with HSTS whenever possible</strong>. HTTPS is <strong>not enough</strong> if users
+go to the plain HTTP URL: Deploy HSTS! There is a <a href="https://letsencrypt.org/">free CA launching this
+year</a>, and the steps to actually get a proper HTTPS
+setup working have never been easier. If you’re in a corporate environment, you
+could set up your own CA and install its cert with your users. Make sure you
+understand the security-implications of this though! Custom CAs will not
+trigger key-pinning violations!</p>
+
+<p>A mitigation if your website was attacked via an inject would be to change the
+requested paths for the faux manifest file to return 404 instead of some other
+return code.</p>
+
+<p>Other things that could be done by Browser vendors would be to make the
+AppCache more visible to the user, via a dedicated icon in the address-bar that
+shows that the offline version of a page is in effect. Another feature or
+extension could be created which only allows AppCache to be set by HTTPS sites,
+which would get rid of the injection attack.</p>
+
+<p><a name="references" class="anchor"></a></p>
+
+<h1 id="references">References</h1>
+
+<ul>
+  <li><a href="http://blog.andlabs.org/2010/06/chrome-and-safari-users-open-to-stealth.html">Attack &amp; Defense Labs: HTML5 AppCache attack</a></li>
+  <li><a href="https://www.hackinparis.com/slides/hip2k12/Krzysztof-html5-somethingwickedthiswaycomes.pdf">HTML5 attacks by Krzysztof Kotowicz</a></li>
+  <li><a href="https://en.wikipedia.org/wiki/Wikipedia:Bypass_your_cache#Bypassing_cache">Wikipedia: Bypass your cache</a></li>
+  <li><a href="http://sakurity.com/blog/2015/08/13/middlekit.html">Egor Homakov: Using AppCache and ServiceWorker for Evil</a></li>
+  <li><a href="http://www.w3.org/TR/2011/WD-html5-20110525/offline.html">W3C HTML5 spec on Offline Web Applications</a></li>
+  <li><a href="http://appcache.offline.technology/">Appcache Facts</a></li>
+</ul>
+
+<p><a name="updates" class="anchor"></a></p>
+
+<h1 id="updates">Updates</h1>
+
+<p>I had previously searched for existing documentation of this attack vector but
+could not find any mention of it. It was only <em>after</em> I had finished my
+research and this blog post that I came upon the <a href="http://blog.andlabs.org/2010/06/chrome-and-safari-users-open-to-stealth.html">blog-post by Attack&amp;Defense
+Labs</a>
+which describes the exact same attack :( It was then rehashed in <a href="https://www.hackinparis.com/slides/hip2k12/Krzysztof-html5-somethingwickedthiswaycomes.pdf">this
+presentation by Krzysztof
+Kotowicz</a>.
+I guess I only searched for “injection” rather than “poisoning”. Nevertheless,
+I still published this post as it should serve as a useful refresher and
+reminder and also examines different browsers and attack vectors.</p>
+
+<p>As I’m not a cutting-edge kind of WebDev, I was not aware that AppCache will
+actually be replaced by
+<a href="http://www.w3.org/TR/service-workers/">ServiceWorkers</a>. In the future, browser
+vendors might drop AppCache support, at which point it will be removed from the
+spec as well. Older browser will still support it though, and there is no
+timeline yet for when it will be removed.</p>
+
+<h1 id="social">Social</h1>
+
+<p>
+<a href="https://twitter.com/share" class="twitter-share-button" data-via="heipei">Tweet</a>&nbsp;&nbsp;
+<a href="https://twitter.com/heipei" class="twitter-follow-button" data-show-count="false">Follow @heipei</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+</p>
+
+
+</div>
+<!--
+
+<div id="related">
+  <h2>Related Posts</h2>
+  <ul class="posts">
+    
+      <li><span>28 May 2016</span> <span class="seperator">~</span> <a href="/2016/05/28/jekyll-and-responsive-flickr-photos/">Jekyll and responsive Flickr photos</a></li>
+    
+      <li><span>23 Sep 2015</span> <span class="seperator">~</span> <a href="/2015/09/23/nginx-sso-Simple-offline-SSO-for-nginx/">nginx-sso - Simple offline SSO for nginx</a></li>
+    
+      <li><span>29 Apr 2015</span> <span class="seperator">~</span> <a href="/2015/04/29/OpenSSH-Secure-Networking-Swiss-Army-Knife/">OpenSSH - Secure Networking Swiss-Army Knife</a></li>
+    
+  </ul>
+</div>
+
+-->
+<div class="comments">
+	<h3>Comments</h3>
+        <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'heipei'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    
+
+</div>
+
+            <div class="footer">
+                <div class="contact">
+                    <p>Johannes Gilger - <a href="https://twitter.com/heipei/">@heipei</a></p>
+                </div>
+                <div class="rss">
+                    <i class="icon-rss"></i> <a href="/atom.xml">Atom Feed</a>
+                </div>
+            </div>
+        </div>
+    </body>
+    <html>
