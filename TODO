@@ -1,0 +1,22 @@
+Blog-Post
+=========
+- Proxy legacy webapp
+- sub_filter
+- proxy_set_header Host
+- proxy_pass
+- Keepalive
+- proxy_redirect
+- CORS
+- Add Header
+- TLS options
+
+- Actually proxy a website like faz.net !
+ - Use heipei.io subdomain
+ - Place host on the Internet
+ - Set dynamic host header
+ - Set dynamic response rewrite for location headers
+ - Rewrite using sub_filter
+ - Request like proxy.heipei.io/www.faz.net
+ - Inject fat warning on top that his is not secure
+
+
