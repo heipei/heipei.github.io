@@ -90,7 +90,7 @@ underline that this is an *internal* host. Your local SSH client will then
 authenticate to host B as if you were connected to it directly.
 
 Another observation here is that you don't need to memorize anything about the
-host, neither it's IP or obscure hostname, port or username when you can simply
+host, neither its IP or obscure hostname, port or username when you can simply
 alias it with the `Host` line.
 
 Legitimate uses of ForwardAgent
@@ -124,7 +124,7 @@ By now you should have some idea about why not to use SSH Agent Forwarding. If
 you do have a legitimate use-case which I haven't covered here, feel free to
 leave it in the comments. I'll follow up this post with a general breakdown of
 some of the awesome features that SSH has to offer. The `ProxyCommand` will
-play a key role, but there are lot's of other goodies hidden inside OpenSSH.
+play a key role, but there are lots of other goodies hidden inside OpenSSH.
 
 Updates - March 4 2015
 ======================
@@ -134,7 +134,7 @@ quickly got quite few replies and some interesting discussions developed. As I
 mentioned in the post I was open for suggestions where ssh-agent might be hard
 to replace and how to use it more securely.
 
-One thing a number of people mentioned was using `ssh-agent -c` which will show
+One thing a number of people mentioned was using `ssh-add -c` which will show
 a confirmation window each time some program wants to use the agent to
 authenticate somewhere. This is certainly a cool feature, though it will also
 trigger for local users (i.e. you) and thus might be annoying. 
@@ -163,7 +163,7 @@ References
 * [Hackernews thread on this post](https://news.ycombinator.com/item?id=9425805)
 * [r/netsec thread on this post](https://www.reddit.com/r/netsec/comments/2xdcgx/ssh_agent_forwarding_considered_harmful/)
 * [The perils of using an ssh-agent](https://www.reddit.com/r/netsec/comments/2m2zpb/the_perils_of_using_an_sshagent/) - Post which fails to mention ProxyCommand
-* [Good post on ssh-agent and ProxyCommand](https//sshmenu.sourceforge.net/articles/transparent-mulithop.html)
+* [Good post on ssh-agent and ProxyCommand](https://sshmenu.sourceforge.net/articles/transparent-mulithop.html)
 * [Putting vpnc into a Linux network namespace](https://github.com/alonbl/vpnc-scripts/blob/master/vpnc-script-sshd)
 * [Linux network namespaces in operation](https://lwn.net/Articles/580893/)
 

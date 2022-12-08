@@ -1,0 +1,16 @@
+current directory: /home/jojo/git/publish/heipei.github.io/vendor/bundle/ruby/3.0.0/gems/eventmachine-1.2.7/ext/fastfilereader
+/usr/bin/ruby -I /usr/lib/ruby/3.0.0 extconf.rb
+creating Makefile
+
+current directory: /home/jojo/git/publish/heipei.github.io/vendor/bundle/ruby/3.0.0/gems/eventmachine-1.2.7/ext/fastfilereader
+make DESTDIR\= sitearchdir\=./.gem.20221208-47113-a33z8h sitelibdir\=./.gem.20221208-47113-a33z8h clean
+
+current directory: /home/jojo/git/publish/heipei.github.io/vendor/bundle/ruby/3.0.0/gems/eventmachine-1.2.7/ext/fastfilereader
+make DESTDIR\= sitearchdir\=./.gem.20221208-47113-a33z8h sitelibdir\=./.gem.20221208-47113-a33z8h
+compiling mapper.cpp
+compiling rubymain.cpp
+linking shared-object fastfilereaderext.so
+
+current directory: /home/jojo/git/publish/heipei.github.io/vendor/bundle/ruby/3.0.0/gems/eventmachine-1.2.7/ext/fastfilereader
+make DESTDIR\= sitearchdir\=./.gem.20221208-47113-a33z8h sitelibdir\=./.gem.20221208-47113-a33z8h install
+/usr/bin/install -c -m 0755 fastfilereaderext.so ./.gem.20221208-47113-a33z8h
